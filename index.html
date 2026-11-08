@@ -290,12 +290,21 @@ function sumRow(label,cols,rows,sumKeys){const r=el('tr',{class:'sum'},roCell(la
 function prevYear(d,kind,target27){
   const P=d.실적2026||(d.실적2026={수주목표:'',수주실적:'',매출목표:'',매출실적:''});
   const kg=kind+'목표', ks=kind+'실적';
-  const tb=el('table'); tb.append(el('thead',null,el('tr',null,...['구분','2026 목표 (원)',kind==='매출'?'2026 실적·전망 (원)':'2026 실적 (원)','달성률','2027 목표 (원)','전년 대비'].map(h=>el('th',null,h)))));
-  const tr=el('tr',null,roCell(kind==='수주'?'수주액':'매출액','c'));
-  for(const k of [kg,ks]){const td=el('td');if(readonly){td.className='ro num';td.textContent=fmt(P[k])}else td.append(el('input',{type:'text',class:'num',value:fmt(P[k]),oninput:e=>{P[k]=e.target.value.replace(/[^\d]/g,'');save(team)},onblur:()=>render()}));tr.append(td)}
-  tr.append(roCell(pct(num(P[ks]),num(P[kg])),'num'),moneyCell(target27),roCell(num(P[ks])?((target27/num(P[ks])-1)*100).toFixed(1)+'%':'','num'));
-  tb.append(el('tbody',null,tr)); return el('div',{class:'prev'},tb)}
-
+  const cell=k=>{const td=el('td');if(readonly){td.className='ro num';td.textContent=fmt(P[k])}else td.append(el('input',{type:'text',class:'num',value:fmt(P[k]),oninput:e=>{P[k]=e.target.value.replace(/[^\d]/g,'');if(kind==='수주')P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));save(team)},onblur:()=>render()}));return td};
+  const tb=el('table');
+  if(kind==='수주'){
+    if(P.수주실적당초===undefined&&P.수주실적){P.수주실적당초=P.수주실적;P.수주실적변경=''}
+    P.수주실적당초=P.수주실적당초??'';P.수주실적변경=P.수주실적변경??'';
+    const act=num(P.수주실적당초)+num(P.수주실적변경); P.수주실적=String(act);
+    tb.append(el('thead',null,el('tr',null,...['구분','2026 목표 (원)','2026 당초 (원)','2026 변경 (원)','2026 합계 (원)','달성률','2027 목표 (원)','전년 대비'].map(h=>el('th',null,h)))));
+    const tr=el('tr',null,roCell('수주액','c'),cell(kg),cell('수주실적당초'),cell('수주실적변경'),moneyCell(act),roCell(pct(act,num(P[kg])),'num'),moneyCell(target27),roCell(act?((target27/act-1)*100).toFixed(1)+'%':'','num'));
+    tb.append(el('tbody',null,tr));
+  } else {
+    tb.append(el('thead',null,el('tr',null,...['구분','2026 목표 (원)','2026 실적·전망 (원)','달성률','2027 목표 (원)','전년 대비'].map(h=>el('th',null,h)))));
+    const tr=el('tr',null,roCell('매출액','c'),cell(kg),cell(ks),roCell(pct(num(P[ks]),num(P[kg])),'num'),moneyCell(target27),roCell(num(P[ks])?((target27/num(P[ks])-1)*100).toFixed(1)+'%':'','num'));
+    tb.append(el('tbody',null,tr));
+  }
+  return el('div',{class:'prev'},tb)}
 // 영업 — 수주목표 (건설사 하위 탭)
 function renderOrders(d){
   const all=orders(d); const cl=clients(d); const isOther=r=>!cl.includes(r.건설사);
@@ -457,7 +466,7 @@ function renderAll(){
     const yr=y=>{const rs=allSalesRows(d,y);const gg=rs.reduce((a,r)=>a+salesTotal(r,y),0),c=rs.reduce((a,r)=>a+cost(r,y),0);return {g:gg,c,p:gg-c}};
     return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,waitG:g.length,unassignedG:g.filter(x=>!pickedBy(d,'예비공무',x.label)).length,
       cnt:su.length,target:su.reduce((a,r)=>a+num(r.목표수주액),0),expected:su.reduce((a,r)=>a+Math.round(num(r.목표수주액)*(PROB[r.가능성]||0)),0),orderNoPM:su.filter(r=>!r.예비소장).length,
-      ord26:num(P.수주실적),sales26:num(P.매출실적),y:{2026:yr(2026),2027:yr(2027),2028:yr(2028)},risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
+      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:num(P.매출실적),y:{2026:yr(2026),2027:yr(2027),2028:yr(2028)},risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
   const A=list.map(([id,n,d])=>[id,n,d,agg(d)]);
   const T=k=>A.reduce((a,x)=>a+x[3][k],0), TY=(y,k)=>A.reduce((a,x)=>a+x[3].y[y][k],0);
   const out=[];
@@ -478,10 +487,10 @@ function renderAll(){
     b1.append(el('tr',null,roCell(n,'c'),roCell(d.pm||'','c'),roCell(d.status||STATUS[0],'c'),roCell(fmtTime(d.updatedAt),'c'),td))}
   t1.append(b1); s1.append(el('div',{class:'wrap'},t1)); out.push(s1);
   const s2=el('div',{class:'sheet'},head('② 수주','단위: 원'));
-  const t2=el('table'); t2.append(el('thead',null,el('tr',null,...['팀','2026 수주 실적','2027 목표 수주액','전년 대비','기대 수주액','기대/목표','건수','소장 미정'].map(h=>el('th',null,h)))));
+  const t2=el('table'); t2.append(el('thead',null,el('tr',null,...['팀','2026 목표','2026 당초','2026 변경','2026 합계','달성률','2027 목표 수주액','전년 대비','기대 수주액','기대/목표','건수','소장 미정'].map(h=>el('th',null,h)))));
   const b2=el('tbody');
-  for(const [id,n,d,a] of A)b2.append(el('tr',null,roCell(n,'c'),moneyCell(a.ord26),moneyCell(a.target),roCell(a.ord26?((a.target/a.ord26-1)*100).toFixed(1)+'%':'','num'),moneyCell(a.expected),roCell(pct(a.expected,a.target),'num'),roCell(a.cnt||'','num'),roCell(a.orderNoPM||'','num')));
-  b2.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(T('ord26')),moneyCell(T('target')),roCell(T('ord26')?((T('target')/T('ord26')-1)*100).toFixed(1)+'%':'','num'),moneyCell(T('expected')),roCell(pct(T('expected'),T('target')),'num'),roCell(T('cnt'),'num'),roCell(T('orderNoPM'),'num')));
+  for(const [id,n,d,a] of A)b2.append(el('tr',null,roCell(n,'c'),moneyCell(a.ord26t),moneyCell(a.ord26a),moneyCell(a.ord26b),moneyCell(a.ord26),roCell(pct(a.ord26,a.ord26t),'num'),moneyCell(a.target),roCell(a.ord26?((a.target/a.ord26-1)*100).toFixed(1)+'%':'','num'),moneyCell(a.expected),roCell(pct(a.expected,a.target),'num'),roCell(a.cnt||'','num'),roCell(a.orderNoPM||'','num')));
+  b2.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(T('ord26t')),moneyCell(T('ord26a')),moneyCell(T('ord26b')),moneyCell(T('ord26')),roCell(pct(T('ord26'),T('ord26t')),'num'),moneyCell(T('target')),roCell(T('ord26')?((T('target')/T('ord26')-1)*100).toFixed(1)+'%':'','num'),moneyCell(T('expected')),roCell(pct(T('expected'),T('target')),'num'),roCell(T('cnt'),'num'),roCell(T('orderNoPM'),'num')));
   t2.append(b2); s2.append(el('div',{class:'wrap'},t2)); out.push(s2);
   const s3=el('div',{class:'sheet'},head('③ 매출·손익 추이','단위: 원 · 손익 = 기성 − 투입'));
   const t3=el('table'); const h1=el('tr',null,el('th',{rowspan:2},'팀'),el('th',{rowspan:2,style:'min-width:150px'},'2026 매출 실적·전망')); const h2=el('tr');
