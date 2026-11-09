@@ -67,7 +67,15 @@ td.st input{background:var(--panel)}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
 .split{display:grid;grid-template-columns:minmax(360px,420px) 1fr;gap:0;align-items:start}
 @media (max-width:1000px){.split{grid-template-columns:1fr}}
-.lcard{border-right:1px solid var(--line);min-width:0}
+.lcard{min-width:0}
+.cards{min-width:0}
+.split{gap:12px;margin-bottom:24px}
+.split>.sheet{margin:0}
+.topcard .sheethead{align-items:center}
+.kvs{display:flex;flex-wrap:wrap;gap:4px 18px;margin-left:8px}
+.kv .l{font-size:11px;color:var(--muted)}
+.kv .v{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv.hi .v{color:var(--accent)}
 .rcard{min-width:0}
 .nowrap{overflow:visible}
 .nowrap th{top:var(--topH,0px)}
@@ -366,8 +374,11 @@ function renderOrders(d){
   const rows=rowsOf(cur);
   const tgt=rs=>rs.reduce((a,x)=>a+num(x.목표수주액),0), tg=rs=>rs.filter(x=>normProb(x.가능성)==='목표').reduce((a,x)=>a+num(x.목표수주액),0);
   const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',목표수주액:'',가능성:'',예정:'',예비소장:'',영업현황:''});
-  const box=el('div',{class:'sheet'},head('수주목표',teamName(team)+' · 단위: '+unitLabel()));
-  box.append(prevYear(d,'수주',tgt(all)));
+  const P=d.실적2026||(d.실적2026={}); const act=num(P.수주실적당초)+num(P.수주실적변경); const t27=tgt(all);
+  const kv=(l,v,cls)=>el('div',{class:'kv'+(cls?' '+cls:'')},el('div',{class:'l'},l),el('div',{class:'v'},v));
+  const top=el('div',{class:'sheet topcard'},el('div',{class:'sheethead'},el('h2',null,'수주목표'),el('span',{class:'note'},teamName(team)+' · 단위: '+unitLabel()),
+    el('div',{class:'kvs'},kv('2026 목표',fmtM(P.수주목표)),kv('2026 당초',fmtM(P.수주실적당초)),kv('2026 변경',fmtM(P.수주실적변경)),kv('2026 합계',fmtM(act)),kv('달성률',pct(act,num(P.수주목표))),kv('2027 목표',fmtM(t27),'hi'),kv('목표건',fmtM(tg(all))),kv('전년 대비',act?((t27/act-1)*100).toFixed(1)+'%':''))));
+  const box=el('div',{class:'cards'},top);
   // 왼쪽: 건설사 카드(선택 탭)
   const left=el('div',{class:'lcard'});
   const lt=el('table'); lt.append(el('thead',null,el('tr',null,...['건설사','2027 목표','목표건','건수'].map(h=>el('th',null,h)))));
@@ -387,9 +398,10 @@ function renderOrders(d){
   {const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:2},'합계'));for(const c of cols.slice(1)){if(c.k==='목표수주액'||c.k==='기대수주액')sr.append(moneyCell(rows.reduce((a,x)=>a+num(c.calc?c.calc(x):x[c.k]),0)));else sr.append(el('td'))}sr.append(el('td'));body.append(sr)}
   tb.append(body); right.append(el('div',{class:'nowrap'},tb));
   if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가')));
-  box.append(el('div',{class:'split'},left,right));
+  const lc=el('div',{class:'sheet'},left), rc=el('div',{class:'sheet'},right);
+  box.append(el('div',{class:'split'},lc,rc));
   const w=waitPM(d); const noPM=all.filter(r=>(r.현장명||r.건설사)&&!r.예비소장).length;
-  box.append(el('div',{class:'foot'},el('span',null,'구분: 목표 = 올해 타겟으로 추진하는 건, 검토 = 정보만 확보한 건'),el('span',null,'예비소장은 착공 예정 이전에 준공되는 대기 소장과 영입 예정 소장만 표시 · 착공 예정을 넣으면 매출목표·손익의 해당 연도에 현장이 자동 추가'),el('span',null,'대기 소장 '+w.length+' · 배치 '+w.filter(x=>pickedBy(d,'예비소장',x.label)).length+' / 소장 미정 수주현장 '+noPM)));
+  rc.append(el('div',{class:'foot'},el('span',null,'구분: 목표 = 올해 타겟으로 추진하는 건, 검토 = 정보만 확보한 건'),el('span',null,'예비소장은 착공 예정 이전에 준공되는 대기 소장과 영입 예정 소장만 표시 · 착공 예정을 넣으면 매출목표·손익의 해당 연도에 현장이 자동 추가'),el('span',null,'대기 소장 '+w.length+' · 배치 '+w.filter(x=>pickedBy(d,'예비소장',x.label)).length+' / 소장 미정 수주현장 '+noPM)));
   return box}
 // 일반 목록
 function renderList(d,s){
