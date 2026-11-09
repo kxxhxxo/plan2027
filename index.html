@@ -379,7 +379,7 @@ function renderSales(d,y){
   const hdr=(a,b,c)=>{const tr=el('tr',null,el('th',{class:'st',style:'width:120px;min-width:120px;max-width:120px'},a),el('th',{class:'st st2',style:'width:240px;min-width:240px;max-width:240px'},b),el('th',{class:'st st3',style:'width:150px;min-width:150px;max-width:150px'},c));
     tr.append(el('th',{style:'min-width:130px'},'계약금액'),el('th',{style:'min-width:130px'},'실행금액'));for(let m=1;m<=12;m++)tr.append(el('th',{style:'min-width:105px'},m+'월'+(m<=lockTo?' 실적':'')));tr.append(el('th',{style:'min-width:140px'},'비고'));return tr};
   const sumRowS=label=>{const tr=el('tr',{class:'sum'});tr.append(roCell(label,'c st'));
-    const tgt=el('td',{class:'st st2 num'}); if(readonly){tgt.className+=' ro';tgt.textContent=fmtM(S.목표[K])} else tgt.append(el('input',{type:'text',class:'num',value:fmtM(S.목표[K]),oninput:e=>{S.목표[K]=parseM(e.target.value);save(team)},onblur:()=>render()})); tr.append(tgt);
+    const tgt=el('td',{class:'st st2 num'}); if(y===2026){const P=d.실적2026||{};if(P.매출목표)S.목표[K]=P.매출목표;tgt.className+=' ro lock';tgt.textContent=fmtM(S.목표[K])} else if(readonly){tgt.className+=' ro';tgt.textContent=fmtM(S.목표[K])} else tgt.append(el('input',{type:'text',class:'num',value:fmtM(S.목표[K]),oninput:e=>{S.목표[K]=parseM(e.target.value);save(team)},onblur:()=>render()})); tr.append(tgt);
     const tc=moneyCell(total);tc.classList.add('st','st3');tr.append(tc);
     tr.append(moneyCell(rows.reduce((a,r)=>a+num(r.계약||r.예상도급액),0)),moneyCell(rows.reduce((a,r)=>a+num(r.실행),0)));for(let j=0;j<12;j++)tr.append(moneyCell(colSum(j)));tr.append(roCell(S.목표[K]?'달성률 '+pct(total,num(S.목표[K])):''));return tr};
   tb.append(el('thead',null,hdr('구분',y+' 목표금액',y+' 기성 합계'),sumRowS('매출액'),hdr('건설사','현장명',y+' 기성 합계')));
