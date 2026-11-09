@@ -227,6 +227,22 @@ textarea.rvin{width:100%;border:1px solid var(--line-2);border-radius:6px;paddin
 .f .ctl.ro{min-height:28px;display:flex;align-items:center;white-space:pre-wrap}
 @media (max-width:1300px){.fgrid.c4{grid-template-columns:1fr 1fr}}
 
+/* 작성 순서 플로우 */
+.flowwrap{position:relative;padding:18px 16px 22px}
+.farrows{position:absolute;inset:0;pointer-events:none}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0 56px;position:relative}
+.fcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.fct{font-weight:700;font-size:12.5px;color:var(--ink);padding:0 0 4px;border-bottom:2px solid var(--line-2)}
+.fn{position:relative;z-index:1;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:3px;min-height:56px;justify-content:center}
+.fn b{font-size:12.5px}
+.fn span{font-size:11px;color:var(--ink-3);line-height:1.4}
+.fn.go{cursor:pointer}
+.fn.go:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.fn.key{border-color:var(--accent-line);background:var(--accent-soft)}
+.fn.key b{color:var(--accent-ink)}
+.fn.end{background:var(--surface-2)}
+@media (max-width:1100px){.flow{grid-template-columns:1fr 1fr}.farrows{display:none}}
+
 /* login */
 #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20}
 .loginbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px 28px;width:min(360px,92vw);display:flex;flex-direction:column;gap:6px}
@@ -499,27 +515,38 @@ function prevYear(d,kind,target27){
     tb.append(el('tbody',null,tr));
   }
   return el('div',{class:'prev'},tb)}
-// 시작 — 작성 순서 안내
+// 시작 — 작성 순서 안내 (플로우)
 function renderGuide(d){
-  const go=k=>el('button',{class:'btn',onclick:()=>{sheet=k;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()}},'열기');
-  const steps=[
-    ['현장 구성 현황','현재 진행 현장·소장·준공예정이 맞는지 확인. 틀린 곳은 본사에 알림 (팀 수정 불가)','현장구성',['진행 현장 수','소장 미기재 현장']],
-    ['준공일정·소장 배치','준공월이 비어 있는 현장은 여기서 준공월 선택 → 2026.11~2027.12 준공 소장이 대기 소장으로 잡힘','소장배치',['준공월','비고']],
-    ['거래처 리스트','건설사별 담당자·등록상태·만기 확인 및 보완. 여기 건설사가 수주목표의 건설사 탭이 됨','거래처',['담당자','등록상태','등록만기']],
-    ['수주목표','건설사 탭별로 2027년 목표 현장 입력. 구분이 "목표"인 건만 2027 목표에 합산. 예비소장은 전사 소장 중 착공 전 준공자','수주목표',['현장명','수주액','구분(목표/검토)','착공 예정','예비소장','영업현황']],
-    ['신규 거래처','2027년 신규 개척할 건설사','신규거래처',['건설사','시평액','당사 등록 현황','주요 협력 3사','영업 지원 필요사항']],
-    ['매출·손익 — 2027년','현장별 2027 기성·자재비·급여노무비·본사경비 검토 후 수정 (음영 열). 0행 "신규 수주 현장"에 2027년 신규 수주분 기성·투입 입력','매출목표',['2027 기성','자재비','급여·노무비','본사경비','신규 수주 현장']],
-    ['매출·손익 — 2028년','같은 방식으로 2028년분','매출목표',['2028 기성','투입 세부']],
-    ['이슈 · 설계변경/정산','현장별 설계변경·정산 현황과 주요 이슈·대응·본사 지원 요청','이슈',['계약현황','설변 예정금액','진행상황','이슈','대응 방안','본사 지원 요청']],
-    ['현장소장 발굴 및 영입 계획','영입 추진 중인 소장. 영입 예정 시기를 넣으면 수주목표 예비소장 목록에 표시','소장영입',['이름','현재 근무회사','출생년도','경력','자격증','영입 예정 시기']],
-    ['제출','상단 「제출」 버튼. 제출 후에는 수정 불가 — 수정이 필요하면 본사에 요청 (수정 열기)','',[]]];
-  const box=el('div',{class:'cards'},topCard('작성 순서',teamName(team)+' · 2027년 사업계획서',kvTable([['기본',[['단위','원 (우상단에서 억 전환)'],['저장','입력 즉시 자동 저장'],['상태',(d.status||'작성 중')]]]])));
-  const card=el('div',{class:'sheet'}); const tb=el('table',{class:'fit'}); const tr=el('tr');
-  for(const [l,w] of [['순서',44],['화면',200],['할 일',0],['입력 항목',380],['',80]])tr.append(el('th',{style:w?'width:'+w+'px':'width:auto'},l));
-  tb.append(el('thead',null,tr)); const body=el('tbody');
-  steps.forEach(([t,desc,k,fields],i)=>{const r=el('tr',null,roCell(i+1,'c'),roCell(t,'b'),el('td',{class:'ro wrap'},desc),el('td',{class:'ro wrap muted'},fields.join(' · ')),el('td',{class:'c'},k?go(k):'')); body.append(r)});
-  tb.append(body); card.append(el('div',{class:'nowrap'},tb)); box.append(card); return box}
-// 영업 — 수주목표 (건설사 하위 탭)
+  const open=k=>{sheet=k;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()};
+  const node=(id,title,sub,k,cls)=>{const n=el('div',{class:'fn'+(cls?' '+cls:''),'data-id':id},el('b',null,title),sub?el('span',null,sub):null);if(k)n.addEventListener('click',()=>open(k));if(k)n.classList.add('go');return n};
+  const col=(title,...ns)=>el('div',{class:'fcol'},el('div',{class:'fct'},title),...ns);
+  const flow=el('div',{class:'flow'},
+    col('① 기준 자료 확인',
+      node('sites','현장 구성 현황','진행 현장 · 소장 · 준공예정 (본사 관리)','현장구성'),
+      node('assign','준공일정·소장 배치','준공월 없는 현장 → 준공월 선택','소장배치'),
+      node('clients','거래처 리스트','건설사 · 담당자 · 등록상태','거래처')),
+    col('② 영업 계획',
+      node('orders','수주목표','건설사별 목표 현장 · 수주액 · 착공 · 예비소장','수주목표','key'),
+      node('newc','신규 거래처','2027 신규 개척 건설사','신규거래처'),
+      node('recruit','소장 발굴·영입','영입 예정 소장 → 예비소장 후보','소장영입')),
+    col('③ 매출·손익 계획',
+      node('sales','매출·손익 2027','현장별 기성·투입 수정 + 0행 신규 수주분','매출목표','key'),
+      node('sales28','매출·손익 2028','같은 방식','매출목표'),
+      node('issues','이슈·설계변경/정산','현장별 설변 · 이슈 · 본사 지원','이슈')),
+    col('④ 제출',
+      node('submit','제출','상단 「제출」 → 잠김',null,'end'),
+      node('review','본사 검토 · 확정','검토 의견 · 수정 열기 · 확정',null,'end')));
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('class','farrows');
+  const wrap=el('div',{class:'flowwrap'},svg,flow);
+  const links=[['sites','assign'],['assign','orders'],['clients','orders'],['recruit','orders'],['orders','sales'],['sales','sales28'],['sales28','issues'],['sales','submit'],['issues','submit'],['submit','review']];
+  const draw=()=>{const W=wrap.clientWidth,H=wrap.clientHeight;if(!W)return;svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width',W);svg.setAttribute('height',H);svg.innerHTML='<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--line-2)"/></marker></defs>';
+    const R=wrap.getBoundingClientRect(); const rect=id=>{const e=wrap.querySelector('[data-id="'+id+'"]');const r=e.getBoundingClientRect();return {x1:r.left-R.left,x2:r.right-R.left,y:r.top-R.top+r.height/2}};
+    for(const [a,b] of links){const A=rect(a),B=rect(b);let p;if(a==='sales'&&b==='sales28'||a==='sales28'&&b==='issues'||a==='sites'&&b==='assign'||a==='submit'&&b==='review'){const ea=wrap.querySelector('[data-id="'+a+'"]').getBoundingClientRect(),eb=wrap.querySelector('[data-id="'+b+'"]').getBoundingClientRect();const x=ea.left-R.left+28,y1=ea.bottom-R.top,y2=eb.top-R.top;p='M'+x+' '+y1+'L'+x+' '+y2}else{const mx=(A.x2+B.x1)/2;p='M'+A.x2+' '+A.y+'C'+mx+' '+A.y+' '+mx+' '+B.y+' '+B.x1+' '+B.y}
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',p);path.setAttribute('fill','none');path.setAttribute('stroke','var(--line-2)');path.setAttribute('stroke-width','1.5');path.setAttribute('marker-end','url(#ah)');svg.append(path)}};
+  requestAnimationFrame(()=>{draw();setTimeout(draw,50)}); window.addEventListener('resize',draw,{once:true});
+  const box=el('div',{class:'cards'},topCard('작성 순서',teamName(team)+' · 2027년 사업계획서',kvTable([['기본',[['단위','원 (우상단에서 억 전환)'],['저장','입력 즉시 자동 저장'],['상태',(d.status||'작성 중')],['수정','제출 후에는 본사가 열어줌']]]])));
+  box.append(el('div',{class:'sheet'},wrap));
+  return box}
 function renderOrders(d){
   const all=orders(d); const cl=clients(d); const isOther=r=>!cl.includes(r.건설사);
   let cur=subtab.builder; if(cur!=='기타'&&!cl.includes(cur))cur=cl[0]||'기타';
