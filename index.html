@@ -131,8 +131,9 @@ const API='https://script.google.com/macros/s/AKfycbyNyN0wcDLsnnkl9d1DnGzDdadOWu
 const ALL_TEAMS=[['t1','1팀'],['t2','2팀'],['t3','t3'],['t4','4팀'],['t5','5팀'],['t6','6팀'],['gov','관급'],['all','취합']];
 ALL_TEAMS[2][1]='3팀';
 let TEAMS=ALL_TEAMS;
-const SECTIONS=['meta','sites','수주목표','매출목표','소장배치','거래처','신규거래처','소장영입'];
-const META_KEYS=['team','pm','status','updatedAt','review','실적2026'];
+const SECTIONS=['meta','kpi','sites','수주목표','매출목표','소장배치','거래처','신규거래처','소장영입'];
+const META_KEYS=['team','pm','status','updatedAt','review'];
+let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
 const MONTHS=(()=>{const a=[];for(let y=2026;y<=2028;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
 const PROB={'확정':1,'유력':0.7,'추진':0.3};
@@ -191,8 +192,9 @@ function setStatus(t){const st=$('#status');const lo=st.querySelector('.lo');st.
 
 // ---- persistence: Apps Script, 섹션 단위 저장(바뀐 섹션만), 팀별 한 번에 하나
 const pending={}, inflight={}, timers={};
-const sectionOf=(d,sec)=>sec==='meta'?Object.fromEntries(META_KEYS.map(k=>[k,d[k]])):d[sec];
-const snapshot=d=>Object.fromEntries(SECTIONS.map(sec=>[sec,JSON.stringify(sectionOf(d,sec)??null)]));
+const sectionOf=(d,sec)=>sec==='meta'?Object.fromEntries(META_KEYS.map(k=>[k,d[k]])):sec==='kpi'?(d.실적2026||{}):d[sec];
+const writable=sec=>ROLE==='admin'||sec!=='kpi';
+const snapshot=d=>Object.fromEntries(SECTIONS.filter(writable).map(sec=>[sec,JSON.stringify(sectionOf(d,sec)??null)]));
 function save(id){ if(readonly||!docs[id])return; docs[id].updatedAt=new Date().toISOString(); pending[id]=true; setStatus('저장 중'); clearTimeout(timers[id]); timers[id]=setTimeout(()=>flush(id),800); }
 async function post(body){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({id:cred.id,pw:cred.pw},body))});const j=await r.json();if(!j.ok)throw new Error(j.error||'save');return j}
 async function flush(id){
@@ -200,7 +202,7 @@ async function flush(id){
   pending[id]=false; inflight[id]=true;
   try{
     const d=docs[id]; const now=snapshot(d); const prev=lastSaved[id]||{};
-    for(const sec of SECTIONS){ if(now[sec]===prev[sec])continue; await post({action:'save',team:id,section:sec,value:JSON.parse(now[sec])}); prev[sec]=now[sec]; }
+    for(const sec of SECTIONS){ if(!writable(sec)||now[sec]===prev[sec])continue; await post({action:'save',team:id,section:sec,value:JSON.parse(now[sec])}); prev[sec]=now[sec]; }
     lastSaved[id]=prev; setStatus('저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){ setStatus(e.message==='auth'?'로그인이 만료됨 — 다시 로그인':'저장 실패 — 잠시 후 다시 시도'); }
   inflight[id]=false; if(pending[id])flush(id);
@@ -210,9 +212,9 @@ async function load(){
   const j=await r.json(); if(!j.ok)throw new Error(j.error||'load');
   return j;
 }
-function assemble(sections){ const d={}; for(const sec in sections){const v=sections[sec].value; if(sec==='meta')Object.assign(d,v||{}); else d[sec]=v} return d }
+function assemble(sections){ const d={}; for(const sec in sections){const v=sections[sec].value; if(sec==='meta'){const m=Object.assign({},v||{});const k=m.실적2026;delete m.실적2026;Object.assign(d,m);if(k&&!d.실적2026)d.실적2026=k} else if(sec==='kpi'){if(v&&Object.keys(v).length)d.실적2026=v} else d[sec]=v} return d }
 async function boot(j){
-  const role=j.role; const myTeam=j.team;
+  const role=j.role; const myTeam=j.team; ROLE=role;
   TEAMS=role==='admin'?ALL_TEAMS:ALL_TEAMS.filter(x=>x[0]===myTeam);
   docs={}; lastSaved={};
   const need=[];
@@ -305,7 +307,7 @@ function sumRow(label,cols,rows,sumKeys){const r=el('tr',{class:'sum'},roCell(la
 function prevYear(d,kind,target27){
   const P=d.실적2026||(d.실적2026={수주목표:'',수주실적:'',매출목표:'',매출실적:''});
   const kg=kind+'목표', ks=kind+'실적';
-  const cell=k=>{const td=el('td');if(readonly){td.className='ro num';td.textContent=fmtM(P[k])}else td.append(el('input',{type:'text',class:'num',value:fmtM(P[k]),oninput:e=>{P[k]=parseM(e.target.value);if(kind==='수주')P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));save(team)},onblur:()=>render()}));return td};
+  const cell=k=>{const td=el('td');if(readonly||ROLE!=='admin'){td.className='ro num';td.textContent=fmtM(P[k])}else td.append(el('input',{type:'text',class:'num',value:fmtM(P[k]),oninput:e=>{P[k]=parseM(e.target.value);if(kind==='수주')P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));save(team)},onblur:()=>render()}));return td};
   const tb=el('table');
   if(kind==='수주'){
     if(P.수주실적당초===undefined&&P.수주실적){P.수주실적당초=P.수주실적;P.수주실적변경=''}
