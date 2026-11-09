@@ -309,7 +309,7 @@ function sumRow(label,cols,rows,sumKeys){const r=el('tr',{class:'sum'},roCell(la
 function prevYear(d,kind,target27){
   const P=d.실적2026||(d.실적2026={수주목표:'',수주실적:'',매출목표:'',매출실적:''});
   const kg=kind+'목표', ks=kind+'실적';
-  const cell=k=>{const td=el('td');if(readonly||ROLE!=='admin'){td.className='ro num';td.textContent=fmtM(P[k])}else td.append(el('input',{type:'text',class:'num',value:fmtM(P[k]),oninput:e=>{P[k]=parseM(e.target.value);if(kind==='수주')P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));save(team)},onblur:()=>render()}));return td};
+  const cell=k=>{const td=el('td');if(true){td.className='ro num';td.textContent=fmtM(P[k])}else td.append(el('input',{type:'text',class:'num',value:fmtM(P[k]),oninput:e=>{P[k]=parseM(e.target.value);if(kind==='수주')P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));save(team)},onblur:()=>render()}));return td};
   const tb=el('table');
   if(kind==='수주'){
     if(P.수주실적당초===undefined&&P.수주실적){P.수주실적당초=P.수주실적;P.수주실적변경=''}
