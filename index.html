@@ -322,7 +322,7 @@ let TEAMS=ALL_TEAMS;
 const SECTIONS=['meta','kpi','sites','수주목표','매출목표','신규매출','소장배치','거래처','신규거래처','소장영입','교육계획'];
 const HQ_SECTIONS=['소장명단']; const secsOf=id=>id==='hq'?HQ_SECTIONS:SECTIONS;
 const META_KEYS=['team','pm','status','updatedAt','review','done'];
-const CHECK_PAGES=['현장구성','거래처','수주목표','신규거래처','매출목표','이슈','소장영입','교육계획'];
+const CHECK_PAGES=['현장구성','거래처','수주목표','매출목표','이슈','소장영입','교육계획'];
 const doneOf=d=>d.done||(d.done={}); const doneCnt=d=>CHECK_PAGES.filter(k=>doneOf(d)[k]).length; const missing=d=>CHECK_PAGES.filter(k=>!doneOf(d)[k]).map(k=>SHEETS[k].t);
 let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
@@ -577,7 +577,7 @@ function renderGuide(d){
       node('clients','거래처 리스트','건설사 · 담당자 · 등록상태','거래처')),
     col('② 영업 계획',
       node('orders','수주목표','건설사별 목표 현장 · 수주액 · 착공 · 예비소장','수주목표','key'),
-      node('newc','신규 거래처','2027 신규 개척 건설사','신규거래처'),
+      node('newc','신규 거래처','2027 신규 개척 건설사 (선택 입력)','신규거래처'),
       node('recruit','소장 발굴·영입','영입 예정 소장 → 예비소장 후보','소장영입'),
       node('edu','교육 계획','소장·공무 교육 상·하반기 주제·시기','교육계획')),
     col('③ 매출·손익 계획',
