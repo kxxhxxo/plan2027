@@ -186,6 +186,7 @@ const ALL_TEAMS=[['t1','1팀'],['t2','2팀'],['t3','t3'],['t4','4팀'],['t5','5�
 ALL_TEAMS[2][1]='3팀';
 let TEAMS=ALL_TEAMS;
 const SECTIONS=['meta','kpi','sites','수주목표','매출목표','소장배치','거래처','신규거래처','소장영입'];
+const HQ_SECTIONS=['소장명단']; const secsOf=id=>id==='hq'?HQ_SECTIONS:SECTIONS;
 const META_KEYS=['team','pm','status','updatedAt','review'];
 let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
@@ -196,7 +197,7 @@ const STATUS=['작성 중','제출','확정'];
 const DC_STATUS=['당초','1차 진행중','1차 완료','2차 진행중','2차 완료','3차 진행중','3차 완료','4차 진행중','4차 완료','정산 중','정산완료','추가공사'];
 const DC_STEP=['1. 도면작업','2. 실물량 산출','3. 내역서 작업','4. 당초 감독관 검토','5. 수정 내역서 작업','6. 수정 내역서 감독관 검토','7. PM - 감독관 금액협의','8. 상신(본사 검토)','9. 본사결재 완료','10. 변경계약 대기','11. 계약완료'];
 const monthsLeft=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';const n=new Date();return (d.getFullYear()-n.getFullYear())*12+(d.getMonth()-n.getMonth())};
-const GROUPS=[['영업',['수주목표','거래처','신규거래처']],['매출·손익',['매출목표']],['인력',['현장구성','소장배치','소장영입']],['현장',['이슈']]];
+const GROUPS=[['영업',['수주목표','거래처','신규거래처']],['매출·손익',['매출목표']],['인력',['현장구성','소장배치','소장명단','소장영입']],['현장',['이슈']]];
 const ORDER_COLS=[
    {k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:200},{k:'목표수주액',l:'수주액',w:130,num:1},
    {k:'가능성',l:'구분',w:64,sel:'prob'},
@@ -207,6 +208,7 @@ const SHEETS={
  매출목표:{t:'매출·손익',special:'sales'},
  현장구성:{t:'현장 구성 현황',special:'sites'},
  소장배치:{t:'준공일정·소장 배치',special:'assign'},
+ 소장명단:{t:'현장소장 명단',special:'roster'},
  거래처:{t:'거래처 리스트',special:'clients',cols:[
    {k:'건설사',l:'건설사',w:160},{k:'담당부서',l:'담당부서',w:140},{k:'담당자명',l:'담당자명',w:100},{k:'회사번호',l:'회사번호',w:120},{k:'HP',l:'H.P',w:120},
    {k:'Email',l:'E-Mail',w:200},{k:'시평액',l:'시평액 (억원)',w:100,num:1,raw:1},{k:'순위',l:'순위',w:60},{k:'등록상태',l:'등록상태',w:80},{k:'등록만기',l:'등록만기',w:90},{k:'비고',l:'비고',w:140}],
@@ -248,8 +250,8 @@ function setStatus(t){const st=$('#status');const lo=st.querySelector('.lo');st.
 const pending={}, inflight={}, timers={};
 const sectionOf=(d,sec)=>sec==='meta'?Object.fromEntries(META_KEYS.map(k=>[k,d[k]])):sec==='kpi'?(d.실적2026||{}):d[sec];
 const writable=sec=>ROLE==='admin'||sec!=='kpi';
-const snapshot=d=>Object.fromEntries(SECTIONS.filter(writable).map(sec=>[sec,JSON.stringify(sectionOf(d,sec)??null)]));
-function save(id){ if(readonly||!docs[id])return; docs[id].updatedAt=new Date().toISOString(); pending[id]=true; setStatus('저장 중'); clearTimeout(timers[id]); timers[id]=setTimeout(()=>flush(id),800); }
+const snapshot=(d,id)=>Object.fromEntries(secsOf(id).filter(writable).map(sec=>[sec,JSON.stringify(sectionOf(d,sec)??null)]));
+function save(id){ if(readonly||!docs[id])return; if(id==='hq'&&ROLE!=='admin')return; docs[id].updatedAt=new Date().toISOString(); pending[id]=true; setStatus('저장 중'); clearTimeout(timers[id]); timers[id]=setTimeout(()=>flush(id),800); }
 let chain=Promise.resolve();
 function post(body){ const run=async()=>{ let last; for(let i=0;i<3;i++){ try{ const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({id:cred.id,pw:cred.pw},body))}); let j; try{ j=await r.json() }catch(e){ throw new Error('server') } if(!j.ok)throw new Error(j.error||'save'); return j }catch(e){ last=e; if(e.message==='auth'||e.message==='forbidden')throw e; await new Promise(r=>setTimeout(r,1500*(i+1))) } } throw last };
   const p=chain.then(run,run); chain=p.catch(()=>{}); return p }
@@ -257,8 +259,8 @@ async function flush(id){
   if(inflight[id]){pending[id]=true;return}
   pending[id]=false; inflight[id]=true;
   try{
-    const d=docs[id]; const now=snapshot(d); const prev=lastSaved[id]||{};
-    for(const sec of SECTIONS){ if(!writable(sec)||now[sec]===prev[sec])continue; await post({action:'save',team:id,section:sec,value:JSON.parse(now[sec])}); prev[sec]=now[sec]; }
+    const d=docs[id]; const now=snapshot(d,id); const prev=lastSaved[id]||{};
+    for(const sec of secsOf(id)){ if(!writable(sec)||now[sec]===prev[sec])continue; await post({action:'save',team:id,section:sec,value:JSON.parse(now[sec])}); prev[sec]=now[sec]; }
     lastSaved[id]=prev; setStatus('저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){ setStatus(e.message==='auth'?'로그인이 만료됨 — 다시 로그인':'저장 실패: '+(e.message||'')); }
   inflight[id]=false; if(pending[id])flush(id);
@@ -275,11 +277,12 @@ async function boot(j){
   docs={}; lastSaved={};
   const need=[];
   for(const [id] of TEAMS){ if(id==='all')continue; const secs=j.data[id]; if(secs&&Object.keys(secs).some(k=>k!=='ping')){docs[id]=assemble(secs);docs[id].team=docs[id].team||id} else {docs[id]=SEEDS[id]?JSON.parse(JSON.stringify(SEEDS[id])):blankDoc(id);need.push(id)} }
-  for(const id of Object.keys(docs)){sites(docs[id]);orders(docs[id]);lastSaved[id]=need.includes(id)?{}:snapshot(docs[id])}
+  for(const id of Object.keys(docs)){sites(docs[id]);orders(docs[id]);lastSaved[id]=need.includes(id)?{}:snapshot(docs[id],id)}
+  docs.hq=assemble(j.data.hq||{}); docs.hq.소장명단=docs.hq.소장명단||[]; lastSaved.hq=snapshot(docs.hq,'hq');
   if(!TEAMS.some(x=>x[0]===team))team=TEAMS[0][0];
   render();
   if(need.length){ setStatus('초기 자료 올리는 중 ('+need.map(teamName).join(', ')+')'); for(const id of need){pending[id]=true;await flush(id)} }
-  if(role==='admin')setInterval(async()=>{ if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#main'))return; if(Object.values(inflight).some(Boolean)||Object.values(pending).some(Boolean))return; try{const jj=await load(); let changed=false; for(const id in jj.data){ if(!jj.data[id]||!Object.keys(jj.data[id]).some(k=>k!=='ping'))continue; const nd=assemble(jj.data[id]); nd.team=nd.team||id; if(JSON.stringify(nd)!==JSON.stringify(docs[id])){docs[id]=nd;lastSaved[id]=snapshot(nd);changed=true} } if(changed)render() }catch(e){} },120000);
+  if(role==='admin')setInterval(async()=>{ if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#main'))return; if(Object.values(inflight).some(Boolean)||Object.values(pending).some(Boolean))return; try{const jj=await load(); let changed=false; for(const id in jj.data){ if(!jj.data[id]||!Object.keys(jj.data[id]).some(k=>k!=='ping'))continue; const nd=assemble(jj.data[id]); nd.team=nd.team||id; if(id==='hq'){nd.소장명단=nd.소장명단||[]} if(JSON.stringify(nd)!==JSON.stringify(docs[id])){docs[id]=nd;lastSaved[id]=snapshot(nd,id);changed=true} } if(changed)render() }catch(e){} },120000);
 }
 // ---- model helpers (현장 마스터 = sites, 수주목표 = 수주목표)
 const koKey=v=>String(v||'').replace(/㈜|\(주\)/g,'').trim();
@@ -301,8 +304,15 @@ const pmOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.소장:(r.소장|
 const siteOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.현장명:(r.현장명||'')};
 const builderOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.건설사:(r.건설사||'')};
 const waitPM=d=>[...(d.소장배치||[]).filter(r=>r.준공후==='대기'&&pmOf(d,r)).map(r=>({m:r.준공월,label:label(pmOf(d,r),r.준공월),ym:ym(r.준공월)})),
+  ...rosterWait().map(r=>({m:'',label:waitLabel(r),ym:0,roster:true})),
   ...(d.소장영입||[]).filter(r=>r.이름).map(r=>({m:r.영입시기||'',label:recruitLabel(r),ym:ym(r.영입시기),recruit:true}))].sort((a,b)=>a.ym-b.ym||a.label.localeCompare(b.label));
 const pickedBy=(d,field,lab)=>orders(d).find(x=>x[field]===lab);
+const roster=()=>(docs.hq&&docs.hq.소장명단)||[];
+const rosterSite=r=>{ // 현재 배치 현장: 불러온 팀 자료의 소장 기준, 없으면 명단에 적힌 현장
+  for(const id in docs){if(id==='hq')continue;const s0=sites(docs[id]).find(x=>(x.소장||'').trim()===r.이름);if(s0)return {team:id,site:s0.현장명,준공:s0.준공예정||''}}
+  return r.현장?{team:r.팀||'',site:r.현장,준공:''}:null};
+const rosterWait=()=>roster().filter(r=>r.이름&&r.상태!=='제외'&&!rosterSite(r));
+const waitLabel=r=>r.이름+' (대기)';
 const clients=d=>[...new Set((d.거래처||[]).map(r=>r.건설사).filter(Boolean))].sort(bcmp(d));
 
 // ---- render
@@ -320,7 +330,7 @@ function render(){
   $('#dlClients').replaceChildren(...clients(d).map(c=>el('option',{value:c})));
   readonly=ROLE!=='admin'&&(d.status||STATUS[0])!=='작성 중';
   const s=SHEETS[sheet];
-  const R={orders:renderOrders,sales:renderSales,sites:renderSites,assign:renderAssign,issues:renderIssues,clients:renderClients};
+  const R={orders:renderOrders,sales:renderSales,sites:renderSites,assign:renderAssign,issues:renderIssues,clients:renderClients,roster:renderRoster};
   main.append(s.special?R[s.special](d,s):renderList(d,s));
   const hd=main.querySelector('.sheethead'); if(hd){const bar=teamBar(d); bar.className='bar inline'; hd.append(bar)}
   syncTop();
@@ -355,27 +365,27 @@ function inputCell(d,row,col,opts){
   if(readonly||o.lock){td.className='ro'+(col.num?' num':'')+(o.lock?' lock':'');td.textContent=money?fmtM(row[col.k]):col.num?fmt(row[col.k]):(row[col.k]??'');return td}
   if(col.sel==='month'||col.sel==='prob'||col.sel==='credit'||col.sel==='dc'||col.sel==='step'){
     const opt=col.sel==='month'?MONTHS:col.sel==='prob'?Object.keys(PROB):col.sel==='dc'?DC_STATUS:col.sel==='step'?DC_STEP:['정상','주의','위험'];
-    const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(team);render()}});
+    const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(o.team||team);render()}});
     sel.append(el('option',{value:''},''));for(const m of opt)sel.append(el('option',{value:m},m));sel.value=col.sel==='prob'?normProb(row[col.k]):(row[col.k]||'');td.append(sel);
     if(col.sel==='credit'&&row[col.k]==='위험')td.className='bad'; if(col.sel==='credit'&&row[col.k]==='주의')td.className='caution';
     return td}
   if(col.sel==='pm'){
     const list=waitPM(d); const lim=ym(row.예정);
     const avail=lim?list.filter(x=>x.ym<=lim):list;
-    const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(team);render()}});
+    const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(o.team||team);render()}});
     sel.append(el('option',{value:''},''));
     for(const x of avail)sel.append(el('option',{value:x.label},x.label));
     if(row[col.k]&&!avail.some(x=>x.label===row[col.k]))sel.append(el('option',{value:row[col.k]},row[col.k]+' — 착공 이후 준공'));
     sel.value=row[col.k]||''; td.append(sel);
     if(row[col.k]&&orders(d).filter(x=>x[col.k]===row[col.k]).length>1)td.className='dup';
     return td}
-  if(col.area){td.append(el('textarea',{rows:1,oninput:e=>{row[col.k]=e.target.value;save(team)}},row[col.k]??''));return td}
+  if(col.area){td.append(el('textarea',{rows:1,oninput:e=>{row[col.k]=e.target.value;save(o.team||team)}},row[col.k]??''));return td}
   const inp=el('input',{type:'text',value:money?fmtM(row[col.k]):col.num?fmt(row[col.k]):(row[col.k]??''),class:col.num?'num':'',
-    oninput:e=>{row[col.k]=money?parseM(e.target.value):col.num?String(e.target.value).replace(/[^\d.-]/g,''):e.target.value;save(team);if(o.live)o.live()},
+    oninput:e=>{row[col.k]=money?parseM(e.target.value):col.num?String(e.target.value).replace(/[^\d.-]/g,''):e.target.value;save(o.team||team);if(o.live)o.live()},
     onblur:e=>{if(money)e.target.value=fmtM(row[col.k]);else if(col.num)e.target.value=fmt(row[col.k]);if(o.after)o.after()}});
   if(col.dl)inp.setAttribute('list','dlClients');
   td.append(inp);return td}
-function delBtn(arr,i,extra){ const td=el('td',{class:'c'}); if(!readonly)td.append(el('button',{class:'del',title:'행 삭제',onclick:()=>{arr.splice(i,1);if(extra)extra();save(team);render()}},'×')); return td }
+function delBtn(arr,i,extra,tid){ const td=el('td',{class:'c'}); if(!readonly)td.append(el('button',{class:'del',title:'행 삭제',onclick:()=>{arr.splice(i,1);if(extra)extra();save(tid||team);render()}},'×')); return td }
 function sumRow(label,cols,rows,sumKeys){const r=el('tr',{class:'sum'},roCell(label,'c'));for(const c of cols){if(sumKeys.includes(c.k))r.append(moneyCell(rows.reduce((a,x)=>a+num(c.calc?c.calc(x):x[c.k]),0)));else r.append(el('td'))}r.append(el('td'));return r}
 function prevYear(d,kind,target27){
   const P=d.실적2026||(d.실적2026={수주목표:'',수주실적:'',매출목표:'',매출실적:''});
@@ -540,6 +550,37 @@ function renderAssign(d){
     body.append(tr2)}
   tb.append(body); card.append(el('div',{class:'nowrap'},tb));
   if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({sid:'',준공월:'',준공후:'대기',비고:''});save(team);render()}},'+ 행 추가')));
+  box.append(card); return box}
+// 인력 — 현장소장 명단 (전사 공통, 수정은 admin)
+function renderRoster(d){
+  const all=roster(); const hq=docs.hq; const canEdit=ROLE==='admin';
+  const rows=all.map(r=>({r,at:rosterSite(r)}));
+  const wait=rows.filter(x=>!x.at&&x.r.상태!=='제외');
+  const assignedTo=r=>{for(const id in docs){if(id==='hq')continue;const o=pickedBy(docs[id],'예비소장',waitLabel(r));if(o)return {team:id,site:o.현장명,예정:o.예정}}return null};
+  const planned=wait.filter(x=>assignedTo(x.r)).length;
+  let f=subtab.rosterF||'전체';
+  const kv=kvTable([['현장소장',[['전체',String(rows.filter(x=>x.r.상태!=='제외').length),'b'],['배치',String(rows.filter(x=>x.at).length)]]],['대기',[['대기',String(wait.length),wait.length?'bad':''],['배치 예정',String(planned||'')],['미정',String((wait.length-planned)||'')]]]]);
+  const box=el('div',{class:'cards'},topCard('현장소장 명단','직위 현장소장 전원 · 현 현장은 각 팀 현장 구성의 소장 기준 · 대기 소장은 수주목표 예비소장 목록에 "(대기)"로 표시',kv));
+  const card=el('div',{class:'sheet'});
+  card.append(subtabs([['전체','전체',rows.length],['대기','대기',wait.length]],f,v=>setSub('rosterF',v)));
+  const cols=[{l:'이름',w:90},{l:'입사일',w:112},{l:'소속 팀',w:80},{l:'현 배치 현장',w:300,flex:1},{l:'준공예정',w:118},{l:'상태',w:70},{l:'배치 예정 (수주목표)',w:260},{l:'비고',w:200}];
+  const tb=fitTable(cols,true,canEdit); const body=el('tbody');
+  const list=(f==='대기'?wait:rows).sort((a,b)=>(a.at?1:0)-(b.at?1:0)||ko(teamName(a.at?a.at.team:a.r.팀),teamName(b.at?b.at.team:b.r.팀))||ko(a.r.이름,b.r.이름));
+  const ro=readonly; readonly=readonly||!canEdit;
+  list.forEach(({r,at},i)=>{
+    const tr=el('tr',null,roCell(i+1,'c muted'),inputCell(hq,r,{k:'이름'},{team:'hq'}),inputCell(hq,r,{k:'입사일'},{team:'hq'}));
+    const teamTd=el('td'); if(canEdit&&!at){const sel=el('select',{onchange:e=>{r.팀=e.target.value;save('hq');render()}});sel.append(el('option',{value:''},''));for(const [id,n] of ALL_TEAMS)sel.append(el('option',{value:id},n));sel.value=r.팀||'';teamTd.append(sel)}else{teamTd.className='ro c';teamTd.textContent=teamName(at?at.team:r.팀)||''}
+    tr.append(teamTd);
+    tr.append(at&&at.site&&!(r.현장&&!sites(docs[at.team]||{}).length)?roCell(at.site):inputCell(hq,r,{k:'현장'},{team:'hq'}));
+    tr.append(roCell(at?at.준공:'','c'));
+    const st=roCell(r.상태==='제외'?'제외':at?'배치':'대기','c'); if(!at&&r.상태!=='제외')st.classList.add('wait'); tr.append(st);
+    const a=!at?assignedTo(r):null; tr.append(roCell(a?teamName(a.team)+' · '+a.site+(a.예정?' ('+a.예정+' 착공)':''):'',a?'':'muted'));
+    tr.append(inputCell(hq,r,{k:'비고'},{team:'hq'}));
+    if(canEdit)tr.append(delBtn(all,all.indexOf(r),null,'hq'));
+    body.append(tr)});
+  readonly=ro;
+  tb.append(body); card.append(el('div',{class:'nowrap'},tb));
+  if(canEdit)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push({id:uid(),이름:'',입사일:'',팀:'',현장:'',상태:'',비고:''});save('hq');render()}},'+ 소장 추가')));
   box.append(card); return box}
 // 현장 — 이슈·설계변경/정산 (좌: 현장 목록, 우: 선택 현장)
 function renderIssues(d){
