@@ -683,7 +683,7 @@ function renderList(d,s){
 function renderSites(d){
   const arr=sites(d); const admin=ROLE==='admin';
   const notes=d.소장배치||(d.소장배치=[]); const noteOf=sid=>{let n=notes.find(x=>x.sid===sid);if(!n){n={sid,비고:''};notes.push(n)}return n};
-  const cols=[{k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:240,flex:1},{k:'준공예정',l:'준공 예정',w:104},{k:'소장',l:'소장',w:100},{k:'보조공무',l:'공무',w:90},{k:'공사부장',l:'공사부장',w:90},{k:'안전담당',l:'안전관리자',w:90},{k:'_배치',l:'소장 배치 예정 (수주목표)',w:230},{k:'_착공',l:'착공',w:72},{k:'_비고',l:'비고',w:160}];
+  const cols=[{k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:240,flex:1},{k:'준공예정',l:'준공 예정',w:104},{k:'소장',l:'소장',w:100},{k:'보조공무',l:'공무',w:90},{k:'공사부장',l:'공사부장',w:90},{k:'안전담당',l:'안전관리자',w:90}];
   const miss=k=>arr.filter(r=>!r[k]).length;
   const w=ownWait(d); const aw=w.filter(x=>pickedBy(d,'예비소장',x.label)).length;
   const kv=kvTable([['현장',[['진행 현장',String(arr.length),'hero'],['준공 미기재',String(miss('준공예정')||''),miss('준공예정')?'bad':''],['소장 미기재',String(miss('소장')||''),miss('소장')?'bad':'']]],
@@ -698,8 +698,8 @@ function renderSites(d){
     td.append(el('input',{type:'text',list:dlid,value:row.소장||'',oninput:e=>{row.소장=e.target.value;save(team)},onchange:()=>render()})); return td};
   arr.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); const m=toYM(row.준공예정); const inWin=m&&ym(m)>=WIN[0]&&ym(m)<=WIN[1]&&row.소장; const a=row.소장?pickedBy(d,'예비소장',label(row.소장.trim(),m||'')):null;
     for(const c of cols){ if(c.k==='준공예정')r.append(monthCell(row)); else if(c.k==='소장'){const td=pmCell(row);if(inWin)td.classList.add('wait');r.append(td)}
-      else if(c.k==='_배치')r.append(roCell(a?a.현장명:(inWin?'미배치':''),a?'':'muted')); else if(c.k==='_착공')r.append(roCell(a?a.예정:'','c')); else if(c.k==='_비고')r.append(inputCell(d,noteOf(row.id),{k:'비고'}));
-      else if(admin||['보조공무','공사부장','안전담당'].includes(c.k)){const td=inputCell(d,row,c);if(!admin)td.classList.add('ed');r.append(td)} else r.append(roCell(row[c.k]||'',c.k==='건설사'?'c':'')) }
+      else if(['보조공무','공사부장','안전담당'].includes(c.k)){const td=inputCell(d,row,c);td.classList.add('ed');r.append(td)}
+      else if(admin&&!row.현장명)r.append(inputCell(d,row,c)); else r.append(roCell(row[c.k]||'',c.k==='건설사'?'c':'')) }
     if(admin)r.append(delBtn(arr,i,()=>{d.소장배치=(d.소장배치||[]).filter(x=>x.sid!==row.id)})); body.append(r)});
   tb.append(body); card.append(el('div',{class:'nowrap'},tb));
   if(admin&&!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),건설사:'',현장명:'',준공예정:'',소장:'',보조공무:'',공사부장:'',안전담당:'',품질관리자:'',계약:'',실행:'',특이사항:''});save(team);render()}},'+ 현장 추가')));
