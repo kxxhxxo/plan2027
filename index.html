@@ -514,7 +514,7 @@ function renderAll(){
       for(const line of ta.value.split(/\n/)){const p=line.split(/[,\t]/).map(x=>x.trim());if(p.length<2||!p[0])continue;const id=names[p[0]]||names[p[0]+'팀']||(ALL_TEAMS.some(x=>x[0]===p[0])?p[0]:null);const d=id&&docs[id];if(!d){bad.push(p[0]);continue}
         const P=d.실적2026||(d.실적2026={});const v=i=>p[i]!==undefined&&p[i]!==''?String(Math.round(Number(p[i].replace(/,/g,''))*1e8)):undefined;
         const a=v(1),b=v(2),c=v(3),e=v(4),f=v(5);if(a!==undefined)P.수주목표=a;if(b!==undefined)P.수주실적당초=b;if(c!==undefined)P.수주실적변경=c;P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));if(e!==undefined)P.매출목표=e;if(f!==undefined)P.매출실적=f;save(id);ok++}
-      msg.textContent=ok+'팀 반영'+(bad.length?' · 못 찾음: '+bad.join(', '):'');render()}},'반영');
+      msg.textContent=ok+'팀 반영 — 상단에 저장됨이 뜰 때까지 새로고침하지 마세요'+(bad.length?' · 못 찾음: '+bad.join(', '):'');render()}},'반영');
     bx.append(ta,el('div',{class:'row'},btn,msg)); s1.append(bx)}
   out.push(s1);
   const s2=el('div',{class:'sheet'},head('② 수주','단위: '+unitLabel()));
@@ -566,6 +566,7 @@ async function tryLogin(id,pw){
   catch(e){ cred=null; showLogin(e.message==='auth'?'아이디 또는 비밀번호가 맞지 않습니다':'서버에 연결할 수 없습니다. 잠시 후 다시 시도') }
 }
 for(const b of document.querySelectorAll('#unit .tab')){b.classList.toggle('on',b.dataset.u===UNIT);b.addEventListener('click',()=>{UNIT=b.dataset.u;try{localStorage.setItem('bp.unit',UNIT)}catch(e){};for(const x of document.querySelectorAll('#unit .tab'))x.classList.toggle('on',x.dataset.u===UNIT);render()})}
+window.addEventListener('beforeunload',e=>{if(Object.values(pending).some(Boolean)||Object.values(inflight).some(Boolean)){e.preventDefault();e.returnValue=''}});
 $('#loginForm').addEventListener('submit',e=>{e.preventDefault();tryLogin($('#lid').value,$('#lpw').value)});
 (function(){ let c=null; try{c=JSON.parse(sessionStorage.getItem('bp.cred')||'null')}catch(e){} if(c&&c.id)tryLogin(c.id,c.pw); else showLogin(); })();
 })();
