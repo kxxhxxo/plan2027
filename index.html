@@ -151,13 +151,13 @@ const ORDER_COLS=[
    {k:'건설사',l:'건설사',w:130,dl:1},{k:'현장명',l:'현장명',w:260},{k:'예상도급액',l:'예상 도급액 (원)',w:150,num:1},{k:'목표수주액',l:'목표 수주액 (원)',w:150,num:1},
    {k:'가능성',l:'구분',w:80,sel:'prob'},{k:'기대수주액',l:'목표건 수주액 (원)',w:150,num:1,calc:r=>normProb(r.가능성)==='목표'?num(r.목표수주액):''},
    {k:'입찰예정',l:'입찰 예정',w:95,sel:'month'},{k:'예정',l:'착공 예정',w:95,sel:'month'},
-   {k:'예비소장',l:'예비소장',w:150,sel:'pm'},{k:'예비공무',l:'예비공무',w:150,sel:'gm'},{k:'영업현황',l:'영업현황',w:220}];
+   {k:'예비소장',l:'예비소장',w:150,sel:'pm'},{k:'영업현황',l:'영업현황',w:220}];
 const SHEETS={
  수주목표:{t:'수주목표',special:'orders'},
  매출목표:{t:'매출목표',special:'sales'},
  손익:{t:'기성·투입 손익',special:'profit'},
  현장구성:{t:'현장 구성 현황',special:'sites'},
- 소장배치:{t:'준공일정·소장/공무 배치',special:'assign'},
+ 소장배치:{t:'준공일정·소장 배치',special:'assign'},
  거래처:{t:'거래처 리스트',list:true,cols:[
    {k:'건설사',l:'건설사',w:160},{k:'담당부서',l:'담당부서',w:140},{k:'담당자명',l:'담당자명',w:100},{k:'회사번호',l:'회사번호',w:120},{k:'HP',l:'H.P',w:120},
    {k:'Email',l:'E-Mail',w:200},{k:'시평액',l:'시평액 (억원)',w:100,num:1,raw:1},{k:'순위',l:'순위',w:60},{k:'등록상태',l:'등록상태',w:80},{k:'등록만기',l:'등록만기',w:90},{k:'비고',l:'비고',w:140}],
@@ -246,12 +246,10 @@ const orderYear=r=>Math.floor(ym(r.예정)/100);
 const orderRows=(d,y)=>orders(d).filter(r=>(r.현장명||r.건설사)&&orderYear(r)&&orderYear(r)<=y);
 const allSalesRows=(d,y)=>[...sites(d),...orderRows(d,y)];
 const pmOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.소장:(r.소장||'')};
-const gmOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.공무:(r.공무||'')};
 const siteOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.현장명:(r.현장명||'')};
 const builderOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.건설사:(r.건설사||'')};
 const waitPM=d=>[...(d.소장배치||[]).filter(r=>r.준공후==='대기'&&pmOf(d,r)).map(r=>({m:r.준공월,label:label(pmOf(d,r),r.준공월),ym:ym(r.준공월)})),
   ...(d.소장영입||[]).filter(r=>r.이름).map(r=>({m:r.영입시기||'',label:recruitLabel(r),ym:ym(r.영입시기),recruit:true}))].sort((a,b)=>a.ym-b.ym||a.label.localeCompare(b.label));
-const waitGM=d=>(d.소장배치||[]).filter(r=>r.공무후==='대기'&&gmOf(d,r)).map(r=>({m:r.준공월,label:label(gmOf(d,r),r.준공월),ym:ym(r.준공월)})).sort((a,b)=>a.ym-b.ym||a.label.localeCompare(b.label));
 const pickedBy=(d,field,lab)=>orders(d).find(x=>x[field]===lab);
 const clients=d=>[...new Set((d.거래처||[]).map(r=>r.건설사).filter(Boolean))].sort(ko);
 
@@ -298,8 +296,8 @@ function inputCell(d,row,col,opts){
     sel.append(el('option',{value:''},''));for(const m of opt)sel.append(el('option',{value:m},m));sel.value=col.sel==='prob'?normProb(row[col.k]):(row[col.k]||'');td.append(sel);
     if(col.sel==='credit'&&row[col.k]==='위험')td.className='bad'; if(col.sel==='credit'&&row[col.k]==='주의')td.className='caution';
     return td}
-  if(col.sel==='pm'||col.sel==='gm'){
-    const list=col.sel==='pm'?waitPM(d):waitGM(d); const lim=ym(row.예정);
+  if(col.sel==='pm'){
+    const list=waitPM(d); const lim=ym(row.예정);
     const avail=lim?list.filter(x=>x.ym<=lim):list;
     const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(team);render()}});
     sel.append(el('option',{value:''},''));
@@ -339,7 +337,7 @@ function renderOrders(d){
   const all=orders(d); const cl=clients(d); const isOther=r=>!cl.includes(r.건설사);
   let cur=subtab.builder; if(cur!=='기타'&&!cl.includes(cur))cur=cl[0]||'기타';
   const rows=cur==='기타'?all.filter(isOther):all.filter(r=>r.건설사===cur);
-  const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',예상도급액:'',목표수주액:'',가능성:'',입찰예정:'',예정:'',예비소장:'',예비공무:'',영업현황:''});
+  const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',예상도급액:'',목표수주액:'',가능성:'',입찰예정:'',예정:'',예비소장:'',영업현황:''});
   const box=el('div',{class:'sheet'},head('수주목표',teamName(team)+' · 단위: '+unitLabel()+'',readonly?[]:[el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가')]));
   box.append(prevYear(d,'수주',all.reduce((a,x)=>a+num(x.목표수주액),0)));
   box.append(subtabs([...cl.map(c=>[c,c,all.filter(r=>r.건설사===c).length||null]),['기타','기타',all.filter(isOther).length||null]],cur,v=>setSub('builder',v)));
@@ -351,8 +349,8 @@ function renderOrders(d){
   const SK=['예상도급액','목표수주액','기대수주액'];
   body.append(sumRow(cur+' 합계',cols,rows,SK)); body.append(sumRow('팀 합계',cols,all,SK));
   tb.append(body); box.append(el('div',{class:'wrap'},tb));
-  const w=waitPM(d),g=waitGM(d); const noPM=all.filter(r=>(r.현장명||r.건설사)&&!r.예비소장).length;
-  box.append(el('div',{class:'foot'},el('span',null,'구분: 목표 = 올해 타겟으로 추진하는 건, 검토 = 정보만 확보한 건 · 목표건 수주액은 구분이 목표인 건만 합산'),el('span',null,'예비소장·공무는 착공 예정 이전에 준공되는 대기 인원과 영입 예정 소장만 표시 · 착공 예정을 넣으면 매출목표·손익의 해당 연도에 현장이 자동 추가'),el('span',null,'대기 소장 '+w.length+' · 배치 '+w.filter(x=>pickedBy(d,'예비소장',x.label)).length+' / 대기 공무 '+g.length+' · 배치 '+g.filter(x=>pickedBy(d,'예비공무',x.label)).length+' / 소장 미정 수주현장 '+noPM)));
+  const w=waitPM(d); const noPM=all.filter(r=>(r.현장명||r.건설사)&&!r.예비소장).length;
+  box.append(el('div',{class:'foot'},el('span',null,'구분: 목표 = 올해 타겟으로 추진하는 건, 검토 = 정보만 확보한 건 · 목표건 수주액은 구분이 목표인 건만 합산'),el('span',null,'예비소장은 착공 예정 이전에 준공되는 대기 소장과 영입 예정 소장만 표시 · 착공 예정을 넣으면 매출목표·손익의 해당 연도에 현장이 자동 추가'),el('span',null,'대기 소장 '+w.length+' · 배치 '+w.filter(x=>pickedBy(d,'예비소장',x.label)).length+' / 소장 미정 수주현장 '+noPM)));
   return box}
 // 일반 목록
 function renderList(d,s){
@@ -368,8 +366,8 @@ function renderList(d,s){
 // 인력 — 현장 구성 (현장 마스터)
 function renderSites(d){
   const arr=sites(d);
-  const cols=[{k:'건설사',l:'건설사',w:120,dl:1},{k:'현장명',l:'현장명',w:280},{k:'준공예정',l:'준공예정',w:100},{k:'소장',l:'소장',w:80},{k:'공무',l:'메인공무',w:80},{k:'보조공무',l:'보조공무',w:80},{k:'공사부장',l:'공사부장',w:80},{k:'안전담당',l:'안전담당',w:80},{k:'품질관리자',l:'품질관리자',w:80},{k:'계약',l:'계약금액 (원)',w:150,num:1},{k:'실행',l:'실행금액 (원)',w:150,num:1},{k:'특이사항',l:'특이사항',w:220}];
-  const box=el('div',{class:'sheet'},head('현장 구성 현황',teamName(team)+' · 진행현장 '+arr.length+'개 · 여기서 고친 현장명·소장·공무가 매출목표·손익·소장배치·이슈에 그대로 반영',readonly?[]:[el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),건설사:'',현장명:'',준공예정:'',소장:'',공무:'',보조공무:'',공사부장:'',안전담당:'',품질관리자:'',계약:'',실행:'',특이사항:''});save(team);render()}},'+ 현장 추가')]));
+  const cols=[{k:'건설사',l:'건설사',w:120,dl:1},{k:'현장명',l:'현장명',w:280},{k:'준공예정',l:'준공예정',w:100},{k:'소장',l:'소장',w:80},{k:'보조공무',l:'보조공무',w:80},{k:'공사부장',l:'공사부장',w:80},{k:'안전담당',l:'안전담당',w:80},{k:'품질관리자',l:'품질관리자',w:80},{k:'계약',l:'계약금액 (원)',w:150,num:1},{k:'실행',l:'실행금액 (원)',w:150,num:1},{k:'특이사항',l:'특이사항',w:220}];
+  const box=el('div',{class:'sheet'},head('현장 구성 현황',teamName(team)+' · 진행현장 '+arr.length+'개 · 여기서 고친 현장명·소장이 매출목표·손익·소장배치·이슈에 그대로 반영',readonly?[]:[el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),건설사:'',현장명:'',준공예정:'',소장:'',보조공무:'',공사부장:'',안전담당:'',품질관리자:'',계약:'',실행:'',특이사항:''});save(team);render()}},'+ 현장 추가')]));
   const tb=el('table'); const tr=el('tr',null,el('th',{style:'width:40px'},'No.'));
   for(const c of cols)tr.append(el('th',{style:'min-width:'+c.w+'px'},c.l)); tr.append(el('th',{style:'width:32px'},''));
   tb.append(el('thead',null,tr)); const body=el('tbody');
@@ -434,12 +432,12 @@ function renderProfit(d,y){
   body.append(sum); tb.append(body); box.append(el('div',{class:'wrap'},tb));
   box.append(el('div',{class:'foot'},el('span',null,'매출투입예정표('+y+'년 기준년도) 소계 기준 · 급여·노무비에는 외주비 포함 · 손익 = 기성 − 투입 합계')));
   return box}
-// 인력 — 준공일정·소장/공무 배치
+// 인력 — 준공일정·소장 배치
 function renderAssign(d){
   const arr=d.소장배치||(d.소장배치=[]);
-  const box=el('div',{class:'sheet'},head('준공일정·소장/공무 배치','2026.11~2027.12 준공 현장 · 소장·공무는 현장 구성 현황에서, 배치 예정은 수주목표에서 자동',readonly?[]:[el('button',{class:'btn',onclick:()=>{arr.push({sid:'',준공월:'',준공후:'대기',공무후:'',비고:''});save(team);render()}},'+ 행 추가')]));
+  const box=el('div',{class:'sheet'},head('준공일정·소장 배치','2026.11~2027.12 준공 현장 · 소장은 현장 구성 현황에서, 배치 예정은 수주목표에서 자동',readonly?[]:[el('button',{class:'btn',onclick:()=>{arr.push({sid:'',준공월:'',준공후:'대기',비고:''});save(team);render()}},'+ 행 추가')]));
   const tb=el('table'); const tr=el('tr');
-  for(const [l,w] of [['준공월',90],['건설사',120],['현장명',260],['소장',80],['소장 준공 후',260],['소장 배치 현장',200],['착공',80],['공무',80],['공무 준공 후',260],['공무 배치 현장',200],['착공',80],['비고',140],['',32]])tr.append(el('th',{style:'min-width:'+w+'px'},l));
+  for(const [l,w] of [['준공월',90],['건설사',120],['현장명',260],['소장',80],['소장 준공 후',260],['소장 배치 현장',200],['착공',80],['비고',140],['',32]])tr.append(el('th',{style:'min-width:'+w+'px'},l));
   tb.append(el('thead',null,tr)); const body=el('tbody');
   const statusSel=(r,k)=>{const td=el('td'); const v=r[k]||''; if(readonly){td.className='ro';td.textContent=v;return td}
     const sel=el('select',{onchange:e=>{r[k]=e.target.value==='대기'?'대기':e.target.value==='겸임'?(v&&v!=='대기'?v:'겸임'):'';save(team);render()}});
@@ -450,23 +448,21 @@ function renderAssign(d){
     sel.append(el('option',{value:''},''));for(const s of sites(d))sel.append(el('option',{value:s.id},s.현장명));sel.value=r.sid||'';td.append(sel);return td};
   const sorted=arr.map((r,i)=>[r,i]).sort((a,b)=>ko(builderOf(d,a[0]),builderOf(d,b[0]))||ko(siteOf(d,a[0]),siteOf(d,b[0])));
   for(const [r,i] of sorted){
-    const pmN=pmOf(d,r), gmN=gmOf(d,r);
+    const pmN=pmOf(d,r);
     const tr2=el('tr'); tr2.append(inputCell(d,r,{k:'준공월',sel:'month'}),roCell(builderOf(d,r),'c'),siteSel(r));
     const pm=roCell(pmN,'c'); if(r.준공후==='대기'&&pmN)pm.classList.add('wait'); tr2.append(pm,statusSel(r,'준공후'));
     const a=r.준공후==='대기'&&pmN?pickedBy(d,'예비소장',label(pmN,r.준공월)):null;
     tr2.append(roCell(a?a.현장명:(r.준공후==='대기'&&pmN?'미배치':''),a?'':'muted'),roCell(a?a.예정:'','c'));
-    const gm=roCell(gmN,'c'); if(r.공무후==='대기'&&gmN)gm.classList.add('wait'); tr2.append(gm,statusSel(r,'공무후'));
-    const b=r.공무후==='대기'&&gmN?pickedBy(d,'예비공무',label(gmN,r.준공월)):null;
-    tr2.append(roCell(b?b.현장명:(r.공무후==='대기'&&gmN?'미배치':''),b?'':'muted'),roCell(b?b.예정:'','c'),inputCell(d,r,{k:'비고'}),delBtn(arr,i));
+    tr2.append(inputCell(d,r,{k:'비고'}),delBtn(arr,i));
     body.append(tr2)}
   tb.append(body);
-  const w=waitPM(d).filter(x=>!x.recruit), g=waitGM(d);
-  const cnt=el('table'); cnt.append(el('thead',null,el('tr',null,...['준공월','대기 소장','배치','대기 공무','배치'].map(h=>el('th',null,h)))));
-  const cb=el('tbody'); let aw=0,ag=0;
-  for(const m of MONTHS.filter(m=>ym(m)<=202712)){const ws=w.filter(x=>x.m===m),gs=g.filter(x=>x.m===m);if(!ws.length&&!gs.length)continue;
-    const a1=ws.filter(x=>pickedBy(d,'예비소장',x.label)).length,a2=gs.filter(x=>pickedBy(d,'예비공무',x.label)).length; aw+=a1;ag+=a2;
-    cb.append(el('tr',null,roCell(m,'c'),roCell(ws.length||'','num'),roCell(a1||'','num'),roCell(gs.length||'','num'),roCell(a2||'','num')))}
-  cb.append(el('tr',{class:'sum'},roCell('합계','c'),roCell(w.length,'num'),roCell(aw,'num'),roCell(g.length,'num'),roCell(ag,'num')));
+  const w=waitPM(d).filter(x=>!x.recruit);
+  const cnt=el('table'); cnt.append(el('thead',null,el('tr',null,...['준공월','대기 소장','배치','미배치'].map(h=>el('th',null,h)))));
+  const cb=el('tbody'); let aw=0;
+  for(const m of MONTHS.filter(m=>ym(m)<=202712)){const ws=w.filter(x=>x.m===m);if(!ws.length)continue;
+    const a1=ws.filter(x=>pickedBy(d,'예비소장',x.label)).length; aw+=a1;
+    cb.append(el('tr',null,roCell(m,'c'),roCell(ws.length,'num'),roCell(a1||'','num'),roCell((ws.length-a1)||'','num')))}
+  cb.append(el('tr',{class:'sum'},roCell('합계','c'),roCell(w.length,'num'),roCell(aw,'num'),roCell(w.length-aw,'num')));
   cnt.append(cb);
   box.append(el('div',{class:'two'},el('div',{class:'wrap'},tb),el('div',{class:'summary'},cnt)));
   return box}
@@ -495,9 +491,9 @@ function renderIssues(d){
 // 취합 (대표 검토 화면)
 function renderAll(){
   const list=TEAMS.filter(([id])=>id!=='all').map(([id,n])=>[id,n,docs[id]]).filter(x=>x[2]);
-  const agg=d=>{const su=orders(d).filter(r=>r.현장명||r.건설사); const w=waitPM(d).filter(x=>!x.recruit),g=waitGM(d); const P=d.실적2026||{};
+  const agg=d=>{const su=orders(d).filter(r=>r.현장명||r.건설사); const w=waitPM(d).filter(x=>!x.recruit); const P=d.실적2026||{};
     const yr=y=>{const rs=allSalesRows(d,y);const gg=rs.reduce((a,r)=>a+salesTotal(r,y),0),c=rs.reduce((a,r)=>a+cost(r,y),0);return {g:gg,c,p:gg-c}};
-    return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,waitG:g.length,unassignedG:g.filter(x=>!pickedBy(d,'예비공무',x.label)).length,
+    return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,
       cnt:su.length,target:su.reduce((a,r)=>a+num(r.목표수주액),0),expected:su.filter(r=>normProb(r.가능성)==='목표').reduce((a,r)=>a+num(r.목표수주액),0),tcnt:su.filter(r=>normProb(r.가능성)==='목표').length,orderNoPM:su.filter(r=>!r.예비소장).length,
       ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:num(P.매출실적),y:{2026:yr(2026),2027:yr(2027),2028:yr(2028)},risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
   const A=list.map(([id,n,d])=>[id,n,d,agg(d)]);
@@ -509,7 +505,7 @@ function renderAll(){
     kp('2027 목표건 수주액',fmtM(T('expected')),(eok(T('expected'))||'0')+' · 전체 '+(eok(T('target'))||'0')),
     kp('2027 매출(기성)',fmtM(TY(2027,'g')),(eok(TY(2027,'g'))||'')+' · 2026 '+(eok(TY(2026,'g'))||'')),
     kp('2027 손익',fmtM(TY(2027,'p')),pct(TY(2027,'p'),TY(2027,'g'))+' · 2026 '+(eok(TY(2026,'p'))||''),TY(2027,'p')<0),
-    kp('미배치 대기 소장',T('unassigned')+' / '+T('wait'),'공무 '+T('unassignedG')+' / '+T('waitG')),
+    kp('미배치 대기 소장',T('unassigned')+' / '+T('wait')),
     kp('소장 미정 수주현장',T('orderNoPM')+' / '+T('cnt')),
     kp('확정 팀',A.filter(x=>x[2].status==='확정').length+' / '+A.length,'제출 '+A.filter(x=>x[2].status==='제출').length)));
   out.push(k);
@@ -544,8 +540,8 @@ function renderAll(){
   b3.append(yrow('합계',y=>({g:TY(y,'g'),c:TY(y,'c'),p:TY(y,'p')}),T('sales26')));
   t3.append(b3); s3.append(el('div',{class:'wrap'},t3)); out.push(s3);
   const s4=el('div',{class:'sheet'},head('④ 인력 · 현장',''));
-  const KS=['sites','noPM','wait','unassigned','waitG','unassignedG','orderNoPM','issues','dc','gapNeg'];
-  const t4=el('table'); t4.append(el('thead',null,el('tr',null,...['팀','진행현장','소장 미기재 현장','대기 소장','미배치','대기 공무','미배치','소장 미정 수주현장','이슈 현장','설변·정산 진행','실행 초과 현장'].map(h=>el('th',null,h)))));
+  const KS=['sites','noPM','wait','unassigned','orderNoPM','issues','dc','gapNeg'];
+  const t4=el('table'); t4.append(el('thead',null,el('tr',null,...['팀','진행현장','소장 미기재 현장','대기 소장','미배치','소장 미정 수주현장','이슈 현장','설변·정산 진행','실행 초과 현장'].map(h=>el('th',null,h)))));
   const b4=el('tbody');
   for(const [id,n,d,a] of A)b4.append(el('tr',null,roCell(n,'c'),...KS.map(kk=>roCell(a[kk]||'','num'))));
   b4.append(el('tr',{class:'sum'},roCell('합계','c'),...KS.map(kk=>roCell(T(kk),'num'))));
