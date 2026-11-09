@@ -492,7 +492,7 @@ function teamBar(d){
   if(CHECK_PAGES.includes(sheet)&&stv==='작성 중'){const on=!!doneOf(d)[sheet];b.append(el('button',{class:'btn chk'+(on?' on':''),onclick:()=>{doneOf(d)[sheet]=!on;readonly=false;save(team);render()}},on?'✓ 이 화면 작성 완료':'이 화면 작성 완료'))}
   b.append(el('span',null,el('label',null,'작성 완료'),doneCnt(d)+' / '+CHECK_PAGES.length));
   if(ROLE==='admin'){ if(stv==='작성 중')st.append(btn('제출 처리',()=>{d.status='제출'})); if(stv==='제출')st.append(btn('확정',()=>{d.status='확정'},true)); if(stv!=='작성 중')st.append(btn('수정 열기',()=>{d.status='작성 중'})); }
-  else { if(stv==='작성 중'){st.append(btn('임시저장',()=>{flush(team)}),btn('전체 제출',()=>{const m=missing(d);if(m.length&&!confirm('작성 완료 표시가 안 된 화면이 있습니다:\n'+m.join(', ')+'\n\n그래도 제출할까요? 제출 후에는 수정할 수 없습니다.'))return false;if(!m.length&&!confirm('전체 제출할까요? 제출 후에는 수정할 수 없습니다.'))return false;d.status='제출'},true))} }
+  else { if(stv==='작성 중'){st.append(btn('임시저장',()=>{flush(team)}),(b=>{if(missing(d).length){b.classList.remove('primary');b.title='모든 화면 작성 완료 후 제출 가능'}return b})(btn('전체 제출',()=>{const m=missing(d);if(m.length){alert('모든 화면을 작성 완료해야 제출할 수 있습니다.\n\n미완료: '+m.join(', '));return false}if(!confirm('전체 제출할까요? 제출 후에는 수정할 수 없습니다.'))return false;d.status='제출'},true))} }
   b.append(st, el('span',null,el('label',null,'마지막 저장'),fmtTime(d.updatedAt)||'—'));
   if(d.review)b.append(el('span',{class:'rv'},el('b',null,'대표 검토 의견'),d.review));
   return b}
