@@ -668,11 +668,11 @@ function renderIssues(d){
   const kv=kvTable([['현장',[['진행 현장',String(arr.length),'b'],['이슈 입력',String(arr.filter(r=>r.이슈).length||'')]]],['설계변경·정산',[['진행 중',String(arr.filter(inDC).length||'')],['설변 예정금액',fmtM(arr.reduce((a,r)=>a+num((r.설변||{}).예정금액),0))],['실행 초과',String(arr.filter(gapNeg).length||''),arr.filter(gapNeg).length?'bad':'']]]]);
   const box=el('div',{class:'cards'},topCard('이슈 · 설계변경/정산',teamName(team)+' · 단위: '+unitLabel(),kv));
   // left
-  const left=el('div',{class:'lcard'}); const lt=fitTable([{l:'건설사',w:88},{l:'현장명',flex:1},{l:'계약 − 실행',w:112},{l:'설변',w:52},{l:'이슈',w:36}]);
+  const left=el('div',{class:'lcard'}); const lt=fitTable([{l:'건설사',w:88},{l:'현장명',flex:1},{l:'계약 − 실행',w:112},{l:'설변 진행',w:78},{l:'이슈',w:44}]);
   const lb=el('tbody');
   for(const r of arr){const tr=el('tr',{class:'pick'+(r.id===cur?' on':''),onclick:()=>setSub('issueSite',r.id)});
     const gap=num(r.계약)-num(r.실행); const gc=moneyCell(r.계약||r.실행?gap:''); if(gapNeg(r))gc.classList.add('bad');
-    tr.append(roCell(r.건설사,'bname'),roCell(r.현장명),gc,roCell(inDC(r)?r.설변.계약현황:'','c'),roCell(r.이슈?'●':'','c')); lb.append(tr)}
+    tr.append(roCell(r.건설사,'bname'),roCell(r.현장명),gc,roCell(inDC(r)?r.설변.계약현황:'','c'),roCell(r.이슈?'있음':'','c')); lb.append(tr)}
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
   // right
   const right=el('div',{class:'rcard'});
@@ -684,7 +684,8 @@ function renderIssues(d){
     const g1=el('div',{class:'fgrid c4'},fld('계약현황',inputCell(d,o,{k:'계약현황',sel:'dc'})),fld('진행상황',inputCell(d,o,{k:'진행상황',sel:'step'})),fld('설변 예정금액',inputCell(d,o,{k:'예정금액',num:1},{after:render})),fld('변경계약 예정 년-월',inputCell(d,o,{k:'예정',sel:'month'})));
     const g2=el('div',{class:'fgrid c2'},fld('이슈',inputCell(d,site,{k:'이슈',area:1}),'ta'),fld('대응 방안',inputCell(d,site,{k:'대응',area:1}),'ta'));
     const g3=el('div',{class:'fgrid c2'},fld('본사 지원 요청',inputCell(d,site,{k:'본사지원',area:1}),'ta'),fld('처리 기한',inputCell(d,site,{k:'기한'})));
-    right.append(info,sec('설계변경 · 정산'),g1,sec('현장 주요 이슈'),g2,g3)}
+    right.append(info,sec('설계변경 · 정산'),g1,sec('현장 주요 이슈'),g2,g3);
+    if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn primary',onclick:()=>{save(team);flush(team)}},'저장'),el('span',null,'입력 즉시 자동 저장 · 마지막 저장 '+(fmtTime(d.updatedAt)||'—'))))}
   box.append(el('div',{class:'split wide'},el('div',{class:'sheet'},left),el('div',{class:'sheet'},right))); return box}
 // 영업 — 거래처 (좌: 건설사, 우: 담당자)
 function renderClients(d,s){
