@@ -195,6 +195,28 @@ table.form textarea{min-height:64px}
 .bar select{border:1px solid var(--line-2);border-radius:6px;height:26px;padding:0 6px;background:var(--surface)}
 textarea.rvin{width:100%;border:1px solid var(--line-2);border-radius:6px;padding:6px 8px;background:var(--surface);color:inherit;box-sizing:border-box}
 
+/* 이슈 우측 카드 */
+.fhead{padding:10px 12px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.fsite{display:flex;align-items:baseline;gap:10px}
+.fsite b{font-size:14px}
+.fsite span{color:var(--ink-3)}
+.fhead .kvt{align-self:flex-start}
+.fhead .kvt td{height:30px;font-size:12.5px}
+.fsec{padding:8px 12px 6px;font-weight:700;font-size:12px;background:var(--surface-2);border-bottom:1px solid var(--line);border-top:1px solid var(--line)}
+.fhead+.fsec{border-top:0}
+.fgrid{display:grid}
+.fgrid.c4{grid-template-columns:repeat(4,1fr)}
+.fgrid.c2{grid-template-columns:1fr 1fr}
+.f{display:flex;flex-direction:column;gap:4px;padding:8px 12px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.fgrid>.f:last-child{border-right:0}
+.f label{font-size:11px;color:var(--ink-3);font-weight:600}
+.f .ctl input,.f .ctl select,.f .ctl textarea{width:100%;height:28px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);padding:0 8px;color:inherit}
+.f .ctl textarea{height:auto;min-height:84px;padding:6px 8px;resize:vertical;line-height:1.5;white-space:pre-wrap}
+.f .ctl input.num{text-align:right}
+.f .ctl input:focus,.f .ctl select:focus,.f .ctl textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.f .ctl.ro{min-height:28px;display:flex;align-items:center;white-space:pre-wrap}
+@media (max-width:1300px){.fgrid.c4{grid-template-columns:1fr 1fr}}
+
 /* login */
 #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20}
 .loginbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px 28px;width:min(360px,92vw);display:flex;flex-direction:column;gap:6px}
@@ -643,16 +665,15 @@ function renderIssues(d){
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
   // right
   const right=el('div',{class:'rcard'});
-  if(site){const o=dc(site); const ml=monthsLeft(site.준공예정);
-    const f=(l,cell)=>{const tr=el('tr');tr.append(el('th',{style:'width:140px;text-align:left'},l),cell);return tr};
-    const t1=formT(); t1.append(el('tbody',null,
-      f('현장',roCell(site.건설사+' · '+site.현장명)),f('소장 · 준공예정',roCell((site.소장||'—')+' · '+(site.준공예정||'—')+(ml!==''?' (잔여 '+ml+'개월)':''))),
-      f('계약금액 / 실행금액',roCell(fmtM(site.계약)+' / '+fmtM(site.실행)+' · 계약 − 실행 '+fmtM(num(site.계약)-num(site.실행)),'num'))));
-    const t2=formT(); t2.append(el('thead',null,el('tr',null,el('th',{colspan:2,class:'g'},'설계변경 · 정산'))),el('tbody',null,
-      f('계약현황',inputCell(d,o,{k:'계약현황',sel:'dc'})),f('설변 예정금액',inputCell(d,o,{k:'예정금액',num:1},{after:render})),f('진행상황',inputCell(d,o,{k:'진행상황',sel:'step'})),f('예정 년-월',inputCell(d,o,{k:'예정',sel:'month'}))));
-    const t3=formT(); t3.append(el('thead',null,el('tr',null,el('th',{colspan:2,class:'g'},'현장 주요 이슈'))),el('tbody',null,
-      f('이슈',inputCell(d,site,{k:'이슈',area:1})),f('대응 방안',inputCell(d,site,{k:'대응',area:1})),f('본사 지원',inputCell(d,site,{k:'본사지원',area:1})),f('기한',inputCell(d,site,{k:'기한'}))));
-    right.append(t1,t2,t3)}
+  if(site){const o=dc(site); const ml=monthsLeft(site.준공예정); const gap=num(site.계약)-num(site.실행);
+    const fld=(label,td,cls)=>{const f=el('div',{class:'f'+(cls?' '+cls:'')},el('label',null,label));const c=el('div',{class:'ctl'+(td.classList.contains('ro')?' ro':'')+(td.classList.contains('num')?' num':'')});c.append(...td.childNodes);f.append(c);return f};
+    const info=el('div',{class:'fhead'},el('div',{class:'fsite'},el('b',null,site.현장명),el('span',null,site.건설사)),
+      kvTable([['현장',[['소장',site.소장||'—'],['준공예정',site.준공예정||'—'],['잔여',ml!==''?ml+'개월':'—']]],['금액',[['계약금액',fmtM(site.계약)],['실행금액',fmtM(site.실행)],['계약 − 실행',fmtM(gap),gap<0?'bad':'']]]]));
+    const sec=t=>el('div',{class:'fsec'},t);
+    const g1=el('div',{class:'fgrid c4'},fld('계약현황',inputCell(d,o,{k:'계약현황',sel:'dc'})),fld('진행상황',inputCell(d,o,{k:'진행상황',sel:'step'})),fld('설변 예정금액',inputCell(d,o,{k:'예정금액',num:1},{after:render})),fld('변경계약 예정 년-월',inputCell(d,o,{k:'예정',sel:'month'})));
+    const g2=el('div',{class:'fgrid c2'},fld('이슈',inputCell(d,site,{k:'이슈',area:1}),'ta'),fld('대응 방안',inputCell(d,site,{k:'대응',area:1}),'ta'));
+    const g3=el('div',{class:'fgrid c2'},fld('본사 지원 요청',inputCell(d,site,{k:'본사지원',area:1}),'ta'),fld('처리 기한',inputCell(d,site,{k:'기한'})));
+    right.append(info,sec('설계변경 · 정산'),g1,sec('현장 주요 이슈'),g2,g3)}
   box.append(el('div',{class:'split wide'},el('div',{class:'sheet'},left),el('div',{class:'sheet'},right))); return box}
 // 영업 — 거래처 (좌: 건설사, 우: 담당자)
 function renderClients(d,s){
