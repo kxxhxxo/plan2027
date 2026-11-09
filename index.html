@@ -345,7 +345,7 @@ const SHEETS={
  안내:{t:'작성 순서',special:'guide'},
  수주목표:{t:'수주목표',special:'orders'},
  매출목표:{t:'매출·손익',special:'sales'},
- 현장구성:{t:'현장·소장 현황',special:'sites'},
+ 현장구성:{t:'현장 관리자 현황',special:'sites'},
  교육계획:{t:'교육 계획',special:'edu'},
  소장배치:{t:'준공일정·소장 배치',special:'assign'},
  소장명단:{t:'현장소장 명단',special:'roster'},
@@ -573,7 +573,7 @@ function renderGuide(d){
   const col=(title,...ns)=>el('div',{class:'fcol'},el('div',{class:'fct'},title),...ns);
   const flow=el('div',{class:'flow'},
     col('① 기준 자료 확인',
-      node('sites','현장·소장 현황','준공 예정 · 소장 입력 → 2027.12까지 준공 소장 = 대기 소장','현장구성'),
+      node('sites','현장 관리자 현황','준공 예정 · 소장 입력 → 2027.12까지 준공 소장 = 대기 소장','현장구성'),
       node('clients','거래처 리스트','건설사 · 담당자 · 등록상태','거래처')),
     col('② 영업 계획',
       node('orders','수주목표','건설사별 목표 현장 · 수주액 · 착공 · 예비소장','수주목표','key'),
@@ -705,7 +705,7 @@ function renderSites(d){
   const w=ownWait(d); const aw=w.filter(x=>pickedBy(d,'예비소장',x.label)).length;
   const kv=kvTable([['현장',[['진행 현장',String(arr.length),'hero'],['준공 미기재',String(miss('준공예정')||''),miss('준공예정')?'bad':''],['소장 미기재',String(miss('소장')||''),miss('소장')?'bad':'']]],
     ['2026.11~2027.12 준공 소장',[['대기',String(w.length),'hero'],['배치 예정',String(aw||'')],['미배치',String((w.length-aw)||''),w.length-aw?'bad':'']],true]]);
-  const box=el('div',{class:'cards'},topCard('현장·소장 현황',teamName(team)+' · 준공 예정·소장·공무·공사부장·안전관리자는 여기서만 입력 · 배치 예정은 수주목표의 예비소장',kv));
+  const box=el('div',{class:'cards'},topCard('현장 관리자 현황',teamName(team)+' · 준공 예정·소장·공무·공사부장·안전관리자는 여기서만 입력 · 배치 예정은 수주목표의 예비소장',kv));
   const card=el('div',{class:'sheet'}); const tb=fitTable(cols,true,admin); const body=el('tbody');
   const names=rosterActive().map(r=>r.이름); const dlid='dlPM'; let dl=$('#'+dlid); if(!dl){dl=el('datalist',{id:dlid});document.body.append(dl)} dl.replaceChildren(...names.map(n=>el('option',{value:n})));
   const monthCell=row=>{const td=el('td',{class:'ed'}); if(readonly){td.className='ro c';td.textContent=toYM(row.준공예정);return td}
