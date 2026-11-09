@@ -490,10 +490,10 @@ function teamBar(d){
   b.append(el('span',null,el('label',null,'PM'),d.pm||''));
   const stv=d.status||STATUS[0]; const st=el('span',{class:'stbox'}); st.append(el('label',null,'작성 상태'),el('b',{class:'stv'+(stv==='제출'?' s1':stv==='확정'?' s2':'')},stv));
   const btn=(l,f,primary)=>el('button',{class:'btn'+(primary?' primary':''),onclick:()=>{if(f()===false)return;readonly=false;save(team);render()}},l);
-  if(CHECK_PAGES.includes(sheet)&&stv==='작성 중'){const on=!!doneOf(d)[sheet];b.append(el('button',{class:'btn chk'+(on?' on':''),onclick:()=>{doneOf(d)[sheet]=!on;readonly=false;save(team);render()}},on?'✓ 확인 완료':'확인 완료'))}
-  b.append(el('span',null,el('label',null,'확인'),doneCnt(d)+' / '+CHECK_PAGES.length));
+  if(CHECK_PAGES.includes(sheet)&&stv==='작성 중'){const on=!!doneOf(d)[sheet];b.append(el('button',{class:'btn chk'+(on?' on':''),onclick:()=>{doneOf(d)[sheet]=!on;readonly=false;save(team);render()}},on?'✓ 이 화면 작성 완료':'이 화면 작성 완료'))}
+  b.append(el('span',null,el('label',null,'작성 완료'),doneCnt(d)+' / '+CHECK_PAGES.length));
   if(ROLE==='admin'){ if(stv==='작성 중')st.append(btn('제출 처리',()=>{d.status='제출'})); if(stv==='제출')st.append(btn('확정',()=>{d.status='확정'},true)); if(stv!=='작성 중')st.append(btn('수정 열기',()=>{d.status='작성 중'})); }
-  else { if(stv==='작성 중'){st.append(btn('임시저장',()=>{}),btn('제출',()=>{const m=missing(d);if(m.length&&!confirm('확인 완료가 안 된 화면이 있습니다:\n'+m.join(', ')+'\n\n그래도 제출할까요?'))return false;d.status='제출'},true))} }
+  else { if(stv==='작성 중'){st.append(btn('전체 제출',()=>{const m=missing(d);if(m.length&&!confirm('작성 완료 표시가 안 된 화면이 있습니다:\n'+m.join(', ')+'\n\n그래도 제출할까요? 제출 후에는 수정할 수 없습니다.'))return false;if(!m.length&&!confirm('전체 제출할까요? 제출 후에는 수정할 수 없습니다.'))return false;d.status='제출'},true))} }
   b.append(st, el('span',null,el('label',null,'마지막 저장'),fmtTime(d.updatedAt)||'—'));
   if(d.review)b.append(el('span',{class:'rv'},el('b',null,'대표 검토 의견'),d.review));
   return b}
@@ -592,7 +592,7 @@ function renderGuide(d){
     for(const [a,b] of links){const A=rect(a),B=rect(b);let p;if(a==='sales'&&b==='sales28'||a==='sales28'&&b==='issues'||a==='submit'&&b==='review'){const ea=wrap.querySelector('[data-id="'+a+'"]').getBoundingClientRect(),eb=wrap.querySelector('[data-id="'+b+'"]').getBoundingClientRect();const x=ea.left-R.left+28,y1=ea.bottom-R.top,y2=eb.top-R.top;p='M'+x+' '+y1+'L'+x+' '+y2}else{const mx=(A.x2+B.x1)/2;p='M'+A.x2+' '+A.y+'C'+mx+' '+A.y+' '+mx+' '+B.y+' '+B.x1+' '+B.y}
       const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',p);path.setAttribute('fill','none');path.setAttribute('stroke','var(--line-2)');path.setAttribute('stroke-width','1.5');path.setAttribute('marker-end','url(#ah)');svg.append(path)}};
   requestAnimationFrame(()=>{draw();setTimeout(draw,50)}); window.addEventListener('resize',draw,{once:true});
-  const box=el('div',{class:'cards'},topCard('작성 순서',teamName(team)+' · 2027년 사업계획서',kvTable([['기본',[['단위','원 (우상단에서 억 전환)'],['저장','입력 즉시 자동 저장'],['상태',(d.status||'작성 중')],['확인 완료',doneCnt(d)+' / '+CHECK_PAGES.length],['수정','제출 후에는 본사가 열어줌']]]])));
+  const box=el('div',{class:'cards'},topCard('작성 순서',teamName(team)+' · 2027년 사업계획서',kvTable([['기본',[['단위','원 (우상단에서 억 전환)'],['저장','입력 즉시 자동 저장'],['상태',(d.status||'작성 중')],['작성 완료',doneCnt(d)+' / '+CHECK_PAGES.length],['수정','제출 후에는 본사가 열어줌']]]])));
   box.append(el('div',{class:'sheet'},wrap));
   return box}
 // 수주목표 엑셀 양식 / 업로드
@@ -892,7 +892,7 @@ function renderAll(){
     ['작성',[['확정',A.filter(x=>x[2].status==='확정').length+' / '+A.length],['제출',String(A.filter(x=>x[2].status==='제출').length)]]]])));
   out.push(k);
   const s1=el('div',{class:'sheet'},head('① 작성 상태 · 대표 검토 의견','검토 의견은 해당 팀 화면 상단에 표시'));
-  const t1=el('table'); t1.append(el('thead',null,el('tr',null,...[['팀',60],['PM',110],['작성 상태',90],['확인 완료',90],['미확인 화면',260],['마지막 저장',100],['검토 의견',400]].map(([h,w])=>el('th',{style:'min-width:'+w+'px'},h)))));
+  const t1=el('table'); t1.append(el('thead',null,el('tr',null,...[['팀',60],['PM',110],['작성 상태',90],['작성 완료',90],['미완료 화면',260],['마지막 저장',100],['검토 의견',400]].map(([h,w])=>el('th',{style:'min-width:'+w+'px'},h)))));
   const b1=el('tbody');
   for(const [id,n,d] of list){const td=el('td');if(readonly){td.className='ro';td.textContent=d.review||''}else td.append(el('textarea',{rows:1,oninput:e=>{d.review=e.target.value;save(id)}},d.review||''));
     const dc=roCell(doneCnt(d)+' / '+CHECK_PAGES.length,'c'); if(doneCnt(d)<CHECK_PAGES.length)dc.classList.add('caution');
