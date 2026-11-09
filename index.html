@@ -429,7 +429,7 @@ const rosterLabel=r=>{const at=rosterSite(r);const m=at?toYM(at.준공):'';retur
 const waitLabel=rosterLabel;
 // 예비소장 후보: 전사 현장소장 전원(팀 무관, 준공월 기준) + 영입 예정. 자기 팀에서 겸임으로 표시한 소장은 제외
 const waitPM=d=>{
-  return [...rosterActive().map(r=>{const at=rosterSite(r);const m=at?toYM(at.준공):'';return {m,label:rosterLabel(r),ym:ym(m),roster:true}}),
+  return [...rosterActive().map(r=>{const at=rosterSite(r);const m=at?toYM(at.준공):'';return {m,label:rosterLabel(r),ym:ym(m),roster:true}}).filter(x=>!x.m||x.ym<=WIN[1]),
   ...(d.소장영입||[]).filter(r=>r.이름).map(r=>({m:r.영입시기||'',label:recruitLabel(r),ym:ym(r.영입시기),recruit:true}))].sort((a,b)=>a.ym-b.ym||a.label.localeCompare(b.label))};
 // admin이 열면 명단의 팀·현장·준공을 실제 현장 구성으로 동기화
 function syncRoster(){if(ROLE!=='admin'||!docs.hq)return;let ch=false;for(const r of roster()){const at=rosterSite(r);const v=at?[at.team,at.site,at.준공]:[r.팀||'','',''];if(r.팀!==v[0]||r.현장!==v[1]||(r.준공||'')!==v[2]){r.팀=v[0];r.현장=v[1];r.준공=v[2];ch=true}}if(ch)save('hq')}
