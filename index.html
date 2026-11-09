@@ -48,6 +48,8 @@ td.st input{background:var(--panel)}
 .tab.team{font-weight:500}
 .tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-top:4px;font-size:12.5px}
+.bar.inline{margin:0 0 0 auto;padding:0;border:0;background:transparent;gap:6px 14px}
+.sheethead .act{margin-left:0}
 .bar label{color:var(--muted);margin-right:4px}
 .bar select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--panel);color:var(--fg)}
 .bar .rv{flex:1 1 320px;min-width:0;color:var(--fg);white-space:pre-wrap}
@@ -288,10 +290,10 @@ function render(){
   if(!d){main.append(el('div',{class:'sheet'},el('div',{class:'empty'},'자료를 아직 받지 못했습니다.')));return}
   $('#dlClients').replaceChildren(...clients(d).map(c=>el('option',{value:c})));
   readonly=ROLE!=='admin'&&(d.status||STATUS[0])!=='작성 중';
-  main.append(teamBar(d));
   const s=SHEETS[sheet];
   const R={orders:renderOrders,sales:()=>renderSales(d,curYear()),profit:()=>renderProfit(d,curYear()),sites:renderSites,assign:renderAssign,issues:renderIssues};
   main.append(s.special?R[s.special](d,s):renderList(d,s));
+  const hd=main.querySelector('.sheethead'); if(hd){const bar=teamBar(d); bar.className='bar inline'; hd.append(bar)}
   syncTop();
 }
 function teamBar(d){
