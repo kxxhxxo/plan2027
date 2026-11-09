@@ -455,7 +455,8 @@ function renderSites(d){
   box.append(card); return box}
 // 매출·손익 — 현장 1행 (연 단위, 연도 탭)
 const gTot=(r,y)=>r['g'+y]!==undefined&&r['g'+y]!==''?num(r['g'+y]):salesTotal(r,y);
-const prevCum=(r,y)=>y===2026?num(r.전회)-gTot(r,2026):y===2027?num(r.전회):num(r.전회)+gTot(r,2027); // 해당 연도 이전 기성누계 (전회 = ~2026 말)
+const hasPrev=r=>r.전회!==undefined&&r.전회!==''&&r.전회!==null;
+const prevCum=(r,y)=>y===2026?(hasPrev(r)?num(r.전회)-gTot(r,2026):0):y===2027?num(r.전회):(hasPrev(r)?num(r.전회):0)+gTot(r,2027); // 해당 연도 이전 기성누계 (전회 = ~2026 말)
 const newRows=d=>bsort(d,d.신규매출||(d.신규매출=[]),r=>r.건설사,r=>r.현장명);
 const salesRows=d=>[...sites(d),...newRows(d)];
 function renderSales(d){
@@ -474,7 +475,7 @@ function renderSales(d){
   const tb=fitTable(cols,true,true); const body=el('tbody');
   const line=(r,i,isNew)=>{const o=Y(r,y); const tr=el('tr',null,roCell(i,'c muted'));
     if(isNew){tr.append(inputCell(d,r,{k:'건설사',dl:1}),inputCell(d,r,{k:'현장명'}),inputCell(d,r,{k:'계약',num:1},{after:render}))} else {tr.append(roCell(r.건설사,'c'),roCell(r.현장명),moneyCell(r.계약))}
-    tr.append(y===2027?inputCell(d,r,{k:'전회',num:1},{after:render}):moneyCell(prev(r)));
+    tr.append(y===2027?inputCell(d,r,{k:'전회',num:1},{after:render}):moneyCell(hasPrev(r)||y===2028?prev(r):''));
     for(const yy of YEARS)if(r['g'+yy]===undefined||r['g'+yy]==='')r['g'+yy]=salesTotal(r,yy)||'';
     tr.append(inputCell(d,r,{k:'g'+y,num:1},{after:render}));
     const t=tot(r); const kr=roCell(pct(t,num(r.계약)),'num'); if(num(r.계약)&&t>num(r.계약))kr.classList.add('caution');
