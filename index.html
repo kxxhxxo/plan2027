@@ -188,6 +188,8 @@ table.ghd th.rs{height:52px;top:0}
 table.ghd td.gsep,table.ghd th.gsep{border-left:1px solid var(--line-2)}
 table.ghd th.ed{background:var(--warn-bg);color:var(--warn-ink)}
 tr.newrow td{background:var(--accent-soft)}
+tr.donerow td{background:var(--surface-2)}
+tr.donerow td.ro{color:var(--ink-2);font-weight:600}
 tr.newrow td.ro{font-weight:600;color:var(--accent-ink)}
 table.ghd td.ed,td.ed{background:var(--warn-bg)}
 table.ghd td.ed input{border-color:#E9C9A0;background:#fff}
@@ -695,7 +697,8 @@ function renderSales(d){
   const P=d.실적2026||{};
   const prev=r=>prevCum(r,y), gY=r=>gTot(r,y), tot=r=>prev(r)+gY(r), pk=r=>prevCost(r,y), kY=r=>cost(r,y), ktot=r=>pk(r)+kY(r);
   const sum=f=>rows.reduce((a,r)=>a+f(r),0);
-  const C=sum(r=>num(r.계약)), PV=sum(prev), G=sum(gY), PK=sum(pk), K=sum(kY);
+  const DONE26=y===2026?num(P.준공기성2026):0; // 2026년 준공·종료 현장분 (현장 목록에 없음)
+  const C=sum(r=>num(r.계약)), PV=sum(prev), G=sum(gY)+DONE26, PK=sum(pk), K=sum(kY);
   const G27=sum(r=>gTot(r,2027)),K27=sum(r=>cost(r,2027));
   const S26=sum(r=>gTot(r,2026))+num(P.준공기성2026);
   const kv=kvTable([['2026년 매출',[['목표',[['연간 목표',fmtM(P.매출목표)]],'tg'],['실적',[['진행 현장',fmtM(sum(r=>gTot(r,2026))),'sm'],['2026 준공 현장',fmtM(P.준공기성2026),'sm'],['예정 기성 합계',fmtM(S26),'hero']],'ta'],['달성률',[['실적 ÷ 목표',rate(S26,num(P.매출목표))]],'tr']]],
@@ -731,6 +734,7 @@ function renderSales(d){
     return tr};
   body.append(line(nr,0,true));
   base.forEach((r,i)=>body.append(line(r,i+1,false)));
+  if(y===2026){const tr=el('tr',{class:'donerow'},roCell('','c'),roCell('',''),roCell('2026년 준공·종료 현장 (합산)'),el('td'),gl(el('td')),moneyCell(DONE26||''));for(let i=0;i<12;i++)tr.append(el('td'));body.append(tr)}
   const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:3},'합계'),moneyCell(C),gl(moneyCell(PV)),moneyCell(G),moneyCell(PV+G),roCell(pct(PV+G,C),'num'),moneyCell(C-PV-G),gl(moneyCell(PK)));
   for(const k of ['자재','노무','간접'])sr.append(moneyCell(sum(r=>num(Y(r,y)[k])))); sr.append(moneyCell(K),moneyCell(PK+K),roCell(pct(PK+K,PV+G),'num'),gl(moneyCell(G-K)),roCell(pct(G-K,G),'num'));
   body.append(sr); tb.append(body); card.append(el('div',{class:'nowrap'},tb));
