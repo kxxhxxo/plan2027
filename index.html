@@ -125,6 +125,16 @@ button{cursor:pointer}
 .kvt td.caution{color:var(--warn-ink)}
 .kvt td small{display:none}
 .kvt td.dim{color:var(--ink-3);font-weight:400}
+.kvt th.sg{height:24px;font-weight:700;color:var(--ink);background:var(--surface);border-bottom:1px solid var(--line)}
+.kvt th.rs{height:50px}
+.kvt .tg{background:var(--surface-2)!important}
+.kvt td.tg{color:var(--ink-2)}
+.kvt th.sg.tg{color:var(--ink-3)}
+.kvt .ta{background:var(--surface)!important}
+.kvt .tr{background:#F3F6FB!important}
+.kvt th.sg.tr{color:var(--st-conf)}
+.kvt td.hero.hi{background:var(--accent-soft)!important}
+:root[data-theme="dark"] .kvt .tr{background:#1d2433!important}
 .kvt td.sm{font-size:12.5px;color:var(--ink-2)}
 .kvt td.hero{font-size:17px;font-weight:700;letter-spacing:-.01em}
 .kvt td.hero.hi{color:var(--accent-ink);background:var(--accent-soft)}
@@ -307,6 +317,7 @@ const CHECK_PAGES=['현장구성','소장배치','거래처','수주목표','신
 const doneOf=d=>d.done||(d.done={}); const doneCnt=d=>CHECK_PAGES.filter(k=>doneOf(d)[k]).length; const missing=d=>CHECK_PAGES.filter(k=>!doneOf(d)[k]).map(k=>SHEETS[k].t);
 let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
+const SITE_MONTHS=(()=>{const a=[];for(let y=2026;y<=2030;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
 const MONTHS=(()=>{const a=[];for(let y=2026;y<=2028;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
 const PROB={'목표':1,'검토':0};
 const YEARS_B=(()=>{const a=[];const y0=new Date().getFullYear();for(let y=y0-25;y>=y0-70;y--)a.push(String(y));return a})();
@@ -477,11 +488,15 @@ function teamBar(d){
   return b}
 const rate=(a,b,inv)=>{if(!b)return '';const v=a/b*100;const good=inv?v<=100:v>=100;return el('span',{class:'rb '+(good?'good':'bad')},v.toFixed(1)+'%')};
 const formT=()=>el('table',{class:'form'},el('colgroup',null,el('col',{style:'width:150px'}),el('col')));
-function kvTable(groups){ // groups: [[title, [[label,value,cls],...], hi],...]
-  const t=el('table',{class:'kvt'}); const h1=el('tr'),h2=el('tr'),vr=el('tr');
-  groups.forEach((g,gi)=>{h1.append(el('th',{colspan:g[1].length,class:'g'+(g[2]?' hi':'')},g[0]));
-    g[1].forEach((it,i)=>{const last=i===g[1].length-1&&gi<groups.length-1;h2.append(el('th',{class:last?'sep':''},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+(last?' sep':'')},it[1]))})});
-  t.append(el('thead',null,h1,h2),el('tbody',null,vr)); return t}
+function kvTable(groups){ // groups: [[title, items, hi]] · item = [label,value,cls] 또는 소그룹 [subtitle,[items],cls]
+  const t=el('table',{class:'kvt'}); const h1=el('tr'),h2=el('tr'),h3=el('tr'),vr=el('tr'); let hasSub=false;
+  const flat=g=>g[1].flatMap(it=>Array.isArray(it[1])?it[1]:[it]);
+  groups.forEach((g,gi)=>{h1.append(el('th',{colspan:flat(g).length,class:'g'+(g[2]?' hi':'')},g[0]));
+    g[1].forEach((it,i)=>{const lastG=i===g[1].length-1&&gi<groups.length-1;
+      if(Array.isArray(it[1])){hasSub=true;const sc=it[2]||'';h2.append(el('th',{colspan:it[1].length,class:'sg '+sc+(lastG?' sep':'')},it[0]));
+        it[1].forEach((x,k)=>{const last=lastG&&k===it[1].length-1;h3.append(el('th',{class:sc+(last?' sep':'')},x[0]));vr.append(el('td',{class:'ro num '+sc+(x[2]?' '+x[2]:'')+(last?' sep':'')},x[1]))})}
+      else{h2.append(el('th',{rowspan:2,class:'rs'+(lastG?' sep':'')},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+(lastG?' sep':'')},it[1]))}})});
+  const th=el('thead',null,h1,h2); if(hasSub)th.append(h3); t.append(th,el('tbody',null,vr)); return t}
 function topCard(title,note,kv){ return el('div',{class:'sheet topcard'},el('div',{class:'sheethead'},el('div',{class:'titlebox'},el('h2',null,title),el('span',{class:'note'},note)),kv)) }
 function fitTable(cols,withNo,withDel){ const tb=el('table',{class:'fit'}); const tr=el('tr'); if(withNo)tr.append(el('th',{style:'width:34px'},'No.'));
   for(const c of cols)tr.append(el('th',{style:c.flex?'width:auto':'width:'+c.w+'px'},c.l)); if(withDel)tr.append(el('th',{style:'width:30px'},'')); tb.append(el('thead',null,tr)); return tb }
@@ -544,8 +559,8 @@ function renderGuide(d){
   const col=(title,...ns)=>el('div',{class:'fcol'},el('div',{class:'fct'},title),...ns);
   const flow=el('div',{class:'flow'},
     col('① 기준 자료 확인',
-      node('sites','현장 구성 현황','진행 현장 · 소장 · 준공예정 (본사 관리)','현장구성'),
-      node('assign','준공일정·소장 배치','준공월 없는 현장 → 준공월 선택','소장배치'),
+      node('sites','현장 구성 현황','준공 예정(년-월) · 소장 입력 — 유일한 입력처','현장구성'),
+      node('assign','준공일정·소장 배치','2027.12까지 준공 소장 = 대기 소장 (확인)','소장배치'),
       node('clients','거래처 리스트','건설사 · 담당자 · 등록상태','거래처')),
     col('② 영업 계획',
       node('orders','수주목표','건설사별 목표 현장 · 수주액 · 착공 · 예비소장','수주목표','key'),
@@ -605,7 +620,7 @@ function renderOrders(d){
   const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',목표수주액:'',가능성:'',예정:'',예비소장:'',영업현황:''});
   const P=d.실적2026||(d.실적2026={}); const act=num(P.수주실적당초)+num(P.수주실적변경); const t27=tg(all);
   const kv=(l,v,cls)=>el('div',{class:'kv'+(cls?' '+cls:'')},el('div',{class:'l'},l),el('div',{class:'v'},v));
-  const top=topCard('수주목표',teamName(team)+' · 단위: '+unitLabel(),kvTable([['2026년 수주',[['목표',fmtM(P.수주목표),'dim'],['실적 (당초)',fmtM(P.수주실적당초),'sm'],['실적 (변경)',fmtM(P.수주실적변경),'sm'],['실적 합계',fmtM(act),'hero'],['달성률',rate(act,num(P.수주목표))]]],['2027년 계획',[['목표',fmtM(t27),'hero hi'],['전년 대비',act?((t27/act-1)*100).toFixed(1)+'%':'','sm']],true]]));
+  const top=topCard('수주목표',teamName(team)+' · 단위: '+unitLabel(),kvTable([['2026년 수주',[['목표',[['연간 목표',fmtM(P.수주목표)]],'tg'],['실적',[['당초',fmtM(P.수주실적당초),'sm'],['변경',fmtM(P.수주실적변경),'sm'],['합계',fmtM(act),'hero']],'ta'],['달성률',[['실적 ÷ 목표',rate(act,num(P.수주목표))]],'tr']]],['2027년 계획',[['목표',[['연간 목표',fmtM(t27),'hero hi']],'tg'],['전년 대비',[['실적 대비',act?((t27/act-1)*100).toFixed(1)+'%':'','sm']],'tr']],true]]));
   const box=el('div',{class:'cards'},top);
   // 왼쪽: 건설사 카드(선택 탭)
   const left=el('div',{class:'lcard'});
@@ -643,16 +658,24 @@ function renderList(d,s){
   return box}
 // 인력 — 현장 구성 (현장 마스터)
 function renderSites(d){
-  const arr=sites(d); const ro0=readonly; readonly=readonly||ROLE!=='admin';
-  const cols=[{k:'건설사',l:'건설사',w:120,dl:1},{k:'현장명',l:'현장명',w:260,flex:1},{k:'준공예정',l:'준공예정',w:132},{k:'소장',l:'소장',w:90},{k:'보조공무',l:'보조공무',w:90},{k:'공사부장',l:'공사부장',w:90},{k:'안전담당',l:'안전담당',w:90},{k:'품질관리자',l:'품질관리자',w:90},{k:'특이사항',l:'특이사항',w:220}];
+  const arr=sites(d); const admin=ROLE==='admin';
+  const cols=[{k:'건설사',l:'건설사',w:120,dl:1},{k:'현장명',l:'현장명',w:260,flex:1},{k:'준공예정',l:'준공 예정 (년-월)',w:120},{k:'소장',l:'소장',w:110},{k:'보조공무',l:'보조공무',w:90},{k:'공사부장',l:'공사부장',w:90},{k:'안전담당',l:'안전담당',w:90},{k:'품질관리자',l:'품질관리자',w:90},{k:'특이사항',l:'특이사항',w:220}];
   const miss=k=>arr.filter(r=>!r[k]).length;
-  const kv=kvTable([['현장',[['진행 현장',String(arr.length),'b']]],['미기재',[['소장',String(miss('소장')||''),miss('소장')?'bad':''],['보조공무',String(miss('보조공무')||'')],['공사부장',String(miss('공사부장')||'')],['안전담당',String(miss('안전담당')||''),miss('안전담당')?'caution':''],['품질관리자',String(miss('품질관리자')||'')],['준공예정',String(miss('준공예정')||'')]]]]);
-  const box=el('div',{class:'cards'},topCard('현장 구성 현황',teamName(team)+' · 현장 마스터 (본사 관리)',kv));
-  const card=el('div',{class:'sheet'}); const tb=fitTable(cols,true,true); const body=el('tbody');
-  arr.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); for(const c of cols)r.append(inputCell(d,row,c)); r.append(delBtn(arr,i,()=>{d.소장배치=(d.소장배치||[]).filter(x=>x.sid!==row.id)})); body.append(r)});
+  const kv=kvTable([['현장',[['진행 현장',String(arr.length),'hero']]],['미기재',[['준공 예정',String(miss('준공예정')||''),miss('준공예정')?'bad':''],['소장',String(miss('소장')||''),miss('소장')?'bad':''],['보조공무',String(miss('보조공무')||''),'sm'],['공사부장',String(miss('공사부장')||''),'sm'],['안전담당',String(miss('안전담당')||''),'sm'],['품질관리자',String(miss('품질관리자')||''),'sm']]]]);
+  const box=el('div',{class:'cards'},topCard('현장 구성 현황',teamName(team)+' · 준공 예정·소장은 여기서만 입력',kv));
+  const card=el('div',{class:'sheet'}); const tb=fitTable(cols,true,admin); const body=el('tbody');
+  const names=rosterActive().map(r=>r.이름); const dlid='dlPM'; let dl=$('#'+dlid); if(!dl){dl=el('datalist',{id:dlid});document.body.append(dl)} dl.replaceChildren(...names.map(n=>el('option',{value:n})));
+  const monthCell=row=>{const td=el('td',{class:'ed'}); if(readonly){td.className='ro c';td.textContent=toYM(row.준공예정);return td}
+    const sel=el('select',{onchange:e=>{row.준공예정=e.target.value?e.target.value.replace('.','-'):'';save(team);render()}}); sel.append(el('option',{value:''},''));
+    const cur=toYM(row.준공예정); const list=[...SITE_MONTHS]; if(cur&&!list.includes(cur))list.unshift(cur); for(const m of list)sel.append(el('option',{value:m},m)); sel.value=cur; td.append(sel); return td};
+  const pmCell=row=>{const td=el('td',{class:'ed'}); if(readonly){td.className='ro c';td.textContent=row.소장||'';return td}
+    td.append(el('input',{type:'text',list:dlid,value:row.소장||'',oninput:e=>{row.소장=e.target.value;save(team)},onchange:()=>render()})); return td};
+  arr.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted'));
+    for(const c of cols){ if(c.k==='준공예정')r.append(monthCell(row)); else if(c.k==='소장')r.append(pmCell(row)); else if(admin)r.append(inputCell(d,row,c)); else r.append(roCell(row[c.k]||'',c.k==='건설사'?'c':'')) }
+    if(admin)r.append(delBtn(arr,i,()=>{d.소장배치=(d.소장배치||[]).filter(x=>x.sid!==row.id)})); body.append(r)});
   tb.append(body); card.append(el('div',{class:'nowrap'},tb));
-  if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),건설사:'',현장명:'',준공예정:'',소장:'',보조공무:'',공사부장:'',안전담당:'',품질관리자:'',계약:'',실행:'',특이사항:''});save(team);render()}},'+ 현장 추가')));
-  readonly=ro0; box.append(card); return box}
+  if(admin&&!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),건설사:'',현장명:'',준공예정:'',소장:'',보조공무:'',공사부장:'',안전담당:'',품질관리자:'',계약:'',실행:'',특이사항:''});save(team);render()}},'+ 현장 추가')));
+  box.append(card); return box}
 // 매출·손익 — 현장 1행 (연 단위, 연도 탭) · 기성 / 투입 / 손익 묶음
 const gTot=(r,y)=>r['g'+y]!==undefined&&r['g'+y]!==''?num(r['g'+y]):salesTotal(r,y);
 const hasPrev=r=>r.전회!==undefined&&r.전회!==''&&r.전회!==null;
@@ -669,8 +692,8 @@ function renderSales(d){
   const C=sum(r=>num(r.계약)), PV=sum(prev), G=sum(gY), PK=sum(pk), K=sum(kY);
   const G27=sum(r=>gTot(r,2027)),K27=sum(r=>cost(r,2027));
   const S26=sum(r=>gTot(r,2026));
-  const kv=kvTable([['2026년 매출',[['목표',fmtM(P.매출목표),'dim'],['예정 기성 (전망)',fmtM(S26),'hero'],['달성률',rate(S26,num(P.매출목표))]]],
-    ['2027년 계획',[['기성(매출)',fmtM(G27),'hero hi'],['전년 대비',S26?((G27/S26-1)*100).toFixed(1)+'%':'','sm'],['투입',fmtM(K27),'sm'],['손익',fmtM(G27-K27),G27-K27<0?'hero bad':'hero'],['이익률',pct(G27-K27,G27),'sm']],true],
+  const kv=kvTable([['2026년 매출',[['목표',[['연간 목표',fmtM(P.매출목표)]],'tg'],['실적',[['예정 기성 (전망)',fmtM(S26),'hero']],'ta'],['달성률',[['실적 ÷ 목표',rate(S26,num(P.매출목표))]],'tr']]],
+    ['2027년 계획',[['매출',[['기성',fmtM(G27),'hero hi'],['전년 대비',S26?((G27/S26-1)*100).toFixed(1)+'%':'','sm']],'ta'],['손익',[['투입',fmtM(K27),'sm'],['손익',fmtM(G27-K27),G27-K27<0?'hero bad':'hero'],['이익률',pct(G27-K27,G27),'sm']],'ta']],true],
     [y+'년 누계',[['계약 합계',fmtM(C)],['기성누계',fmtM(PV+G)],['기성률',pct(PV+G,C)],['투입누계',fmtM(PK+K)],['투입률',pct(PK+K,PV+G)]]]]);
   const box=el('div',{class:'cards'},topCard('매출·손익',teamName(team)+' · 단위: '+unitLabel(),kv));
   const ed=y!==2026; // 2026년은 실적·전망 — 수정 불가
@@ -713,18 +736,17 @@ function renderAssign(d){
   const miss=arr.filter(r=>!toYM(r.준공예정));
   const w=ownWait(d); const aw=w.filter(x=>pickedBy(d,'예비소장',x.label)).length;
   const kv=kvTable([['2026.11~2027.12 준공',[['대기 소장',String(w.length),'b'],['배치 예정',String(aw||'')],['미배치',String((w.length-aw)||''),w.length-aw?'bad':'']]],['준공월 미기재',[['현장',String(miss.length||''),miss.length?'caution':'']]]]);
-  const box=el('div',{class:'cards'},topCard('준공일정·소장 배치',teamName(team)+' · 준공월·소장은 현장 구성 기준, 배치 현장은 수주목표의 예비소장 기준',kv));
+  const box=el('div',{class:'cards'},topCard('준공일정·소장 배치',teamName(team)+' · 준공월·소장은 현장 구성 현황, 배치 현장은 수주목표 기준 (여기서는 비고만 입력)',kv));
   const cols=[{l:'준공월',w:110},{l:'건설사',w:120},{l:'현장명',w:300,flex:1},{l:'소장',w:90},{l:'배치 예정 현장',w:260},{l:'착공 예정',w:90},{l:'비고',w:200}];
   const card=el('div',{class:'sheet'}); const tb=fitTable(cols,false,false); const body=el('tbody');
   const line=r=>{const tr=el('tr'); const m=toYM(r.준공예정);
-    if(m)tr.append(roCell(m,'c'));
-    else{const td=el('td',{class:'ed'});if(readonly){td.className='ro c'}else{const sel=el('select',{onchange:e=>{r.준공예정=e.target.value?e.target.value.replace('.','-'):'';save(team);render()}});sel.append(el('option',{value:''},''));for(const mm of MONTHS)sel.append(el('option',{value:mm},mm));td.append(sel)}tr.append(td)}
+    tr.append(m?roCell(m,'c'):roCell('미기재','c muted'));
     tr.append(roCell(r.건설사,'c'),roCell(r.현장명));
     const pm=roCell(r.소장,'c'); const inWin=m&&ym(m)>=WIN[0]&&ym(m)<=WIN[1]; if(inWin)pm.classList.add('wait'); tr.append(pm);
     const a=pickedBy(d,'예비소장',label(r.소장.trim(),m||''));
     tr.append(roCell(a?a.현장명:(inWin?'미배치':''),a?'':'muted'),roCell(a?a.예정:'','c'),inputCell(d,noteOf(r.id),{k:'비고'}));
     return tr};
-  if(miss.length){body.append(el('tr',{class:'sec'},el('td',{colspan:7},'준공월 미기재 — 준공월을 고르면 대기 소장으로 잡힘 ('+miss.length+')')));for(const r of miss)body.append(line(r))}
+  if(miss.length){body.append(el('tr',{class:'sec'},el('td',{colspan:7},'준공월 미기재 — 현장 구성 현황에서 입력 ('+miss.length+')')));for(const r of miss)body.append(line(r))}
   const rest=arr.filter(r=>toYM(r.준공예정)).sort((a,b)=>ym(toYM(a.준공예정))-ym(toYM(b.준공예정))||bcmp(d)(a.건설사,b.건설사)||ko(a.현장명,b.현장명));
   if(miss.length&&rest.length)body.append(el('tr',{class:'sec'},el('td',{colspan:7},'준공월 순')));
   for(const r of rest)body.append(line(r));
@@ -750,7 +772,7 @@ function renderRoster(d){
     const tr=el('tr',null,roCell(i+1,'c muted'),roCell(r.이름,'c'),roCell(r.입사일,'c'));
     const teamTd=el('td'); if(canEdit&&!at){const sel=el('select',{onchange:e=>{r.팀=e.target.value;save('hq');render()}});sel.append(el('option',{value:''},''));for(const [id,n] of ALL_TEAMS)sel.append(el('option',{value:id},n));sel.value=r.팀||'';teamTd.append(sel)}else{teamTd.className='ro c';teamTd.textContent=teamName(at?at.team:r.팀)||''}
     tr.append(teamTd);
-    tr.append(at&&at.site&&!(r.현장&&!sites(docs[at.team]||{}).length)?roCell(at.site):inputCell(hq,r,{k:'현장'},{team:'hq'}));
+    tr.append(roCell(at?at.site:''));
     tr.append(roCell(at?toYM(at.준공):'','c'));
     const st=roCell(r.상태==='제외'?'제외':at?'배치':'대기','c'); if(!at&&r.상태!=='제외')st.classList.add('wait'); tr.append(st);
     const a=assignedTo(r); tr.append(roCell(a?teamName(a.team)+' · '+a.site+(a.예정?' ('+a.예정+' 착공)':''):'',a?'':'muted'));
