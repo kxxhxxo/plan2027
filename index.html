@@ -292,6 +292,20 @@ td.link:hover{background:var(--accent-soft)}
 @media (max-width:900px){.side{display:none}.page{padding:10px 12px 20px}}
 
 /* ── 대표 보고서 (A4 세로) */
+.rk-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:2px 0 10px}
+.rk-card{border:1px solid #D4D8DE;border-radius:6px;padding:6px 9px 7px;background:#FAFBFC;min-width:0}
+.rk-card label{display:block;font-size:9px;color:var(--ink-3);margin-bottom:2px}
+.rk-card b{display:block;font-size:15px;letter-spacing:-.01em;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rk-card span{display:block;font-size:8.5px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk-card.bad b{color:var(--danger)}
+.rcharts{display:flex;gap:14px;align-items:flex-start;margin:0 0 4px}
+.rcharts>div{flex:1;min-width:0;border:1px solid #E6E8EC;border-radius:6px;padding:6px 8px 4px}
+.rcharts h4{font-size:10px;margin:0 0 4px;color:var(--ink-2);font-weight:600}
+.chart{display:block;max-width:100%;height:auto}
+.chart .ax{font-size:8.5px;fill:#626977}
+.chart .bl{font-size:8px;fill:#1A1C21}
+.rempty{font-size:9.5px;color:var(--ink-3);padding:10px 0}
+
 .rbar{display:flex;align-items:center;gap:12px;color:var(--ink-3);margin:0 auto 10px;width:210mm;max-width:100%}
 .rbar .btn{margin-left:auto}
 .rp{background:#fff;width:210mm;min-height:297mm;box-sizing:border-box;padding:14mm 13mm 16mm;margin:0 auto 14px;box-shadow:0 2px 12px rgba(0,0,0,.08);color:#1A1C21;font-size:10.5px;line-height:1.4;position:relative;display:flex;flex-direction:column}
@@ -1028,6 +1042,32 @@ function renderAll(){
   return out}
 
 
+
+// 보고서용 SVG 차트 (외부 라이브러리 없음 · 인쇄 안전)
+const SVGNS='http://www.w3.org/2000/svg';
+const sv=(tag,attrs,text)=>{const e=document.createElementNS(SVGNS,tag);for(const k in attrs||{})e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e};
+const fmtS=v=>{const a=Math.abs(v);const x=UNIT==='억'?v/1e8:v;if(UNIT!=='억')return (x/1e8).toFixed(a>=1e9?0:1)+'억';return a>=1e10?Math.round(x).toLocaleString('ko-KR'):x.toFixed(1)};
+// 세로 묶음 막대: cats=[라벨…], series=[{name,vals,color}]
+function barsV(cats,series,opt){opt=opt||{};const W=opt.w||660,H=opt.h||150,L=44,Rr=8,T=18,B=22;const iw=W-L-Rr,ih=H-T-B;
+  const svg=sv('svg',{viewBox:'0 0 '+W+' '+H,width:W,height:H,class:'chart'});
+  const all=series.flatMap(x=>x.vals);let mx=Math.max(0,...all),mn=Math.min(0,...all);if(mx===mn){mx=1}
+  const step=niceStep((mx-mn)/4);mx=Math.ceil(mx/step)*step;mn=Math.floor(mn/step)*step;const y=v=>T+ih*(1-(v-mn)/(mx-mn));
+  for(let v=mn;v<=mx+1e-9;v+=step){svg.append(sv('line',{x1:L,x2:W-Rr,y1:y(v),y2:y(v),stroke:v===0?'#9AA1AC':'#E6E8EC','stroke-width':1}));svg.append(sv('text',{x:L-5,y:y(v)+3,'text-anchor':'end',class:'ax'},fmtS(v)))}
+  const n=cats.length,gw=iw/n,bw=Math.min(22,(gw*0.7)/series.length);
+  cats.forEach((c,i)=>{const x0=L+gw*i+(gw-bw*series.length)/2;series.forEach((sr,j)=>{const v=sr.vals[i]||0;const yy=y(Math.max(v,0)),h=Math.abs(y(v)-y(0));svg.append(sv('rect',{x:x0+bw*j,y:yy,width:bw-2,height:h,fill:v<0?'#C0281B':sr.color,rx:1}));if(v&&opt.labels)svg.append(sv('text',{x:x0+bw*j+(bw-2)/2,y:v<0?yy+h+9:yy-3,'text-anchor':'middle',class:'bl'},fmtS(v)))});svg.append(sv('text',{x:L+gw*i+gw/2,y:H-7,'text-anchor':'middle',class:'ax'},c))});
+  if(series.length>1){let lx=L;series.forEach(sr=>{svg.append(sv('rect',{x:lx,y:3,width:9,height:9,fill:sr.color}));svg.append(sv('text',{x:lx+12,y:11,class:'ax'},sr.name));lx+=sr.name.length*11+26})}
+  return svg}
+// 가로 막대: items=[{label,val,sub}]
+function barsH(items,opt){opt=opt||{};const W=opt.w||320,rh=16,L=opt.l||120,Rr=52,H=items.length*rh+6;const iw=W-L-Rr;
+  const svg=sv('svg',{viewBox:'0 0 '+W+' '+H,width:W,height:H,class:'chart'});
+  const mx=Math.max(1,...items.map(x=>Math.abs(x.val)));const neg=items.some(x=>x.val<0);const zero=neg?L+iw/2:L;const sc=(neg?iw/2:iw)/mx;
+  svg.append(sv('line',{x1:zero,x2:zero,y1:0,y2:H,stroke:'#9AA1AC'}));
+  items.forEach((it,i)=>{const yy=3+i*rh;const w=Math.abs(it.val)*sc;svg.append(sv('rect',{x:it.val<0?zero-w:zero,y:yy+2,width:w,height:rh-5,fill:it.val<0?'#C0281B':(it.color||'#E8501A'),rx:1}));
+    svg.append(sv('text',{x:L-6,y:yy+rh-5,'text-anchor':'end',class:'ax'},it.label.length>14?it.label.slice(0,13)+'…':it.label));
+    svg.append(sv('text',{x:it.val<0?zero+4:zero+w+4,y:yy+rh-5,'text-anchor':'start',class:'bl'},fmtS(it.val)+(it.sub?' '+it.sub:'')))});
+  return svg}
+const niceStep=r=>{if(r<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(r)));const m=r/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p};
+const kpiCards=items=>el('div',{class:'rk-cards'},...items.map(([l,v,sub,cls])=>el('div',{class:'rk-card'+(cls?' '+cls:'')},el('label',null,l),el('b',null,v),sub?el('span',null,sub):null)));
 // ---- 대표 보고서 (A4 세로 · 전사 요약 1장 + 팀별)
 function renderReport(){
   const list=teamList(); const A=list.map(([id,n,d])=>[id,n,d,aggTeam(d)]); const T=k=>A.reduce((a,x)=>a+x[3][k],0);
@@ -1047,6 +1087,9 @@ function renderReport(){
   const p0=el('div',{class:'rp'});
   p0.append(pageHead('전사 요약','보고일 '+today));
   const GK=T('G')-T('K');
+  p0.append(kpiCards([['2027 수주목표',M(T('target'))||'—',T('ord26')?'2026 실적 '+M(T('ord26'))+' · '+D(T('target'),T('ord26')):'2026 실적 미입력'],['2027 매출(기성)',M(T('G'))||'—','2026 '+M(T('sales26'))+' · '+D(T('G'),T('sales26'))],['2027 손익',M(GK)||'—','이익률 '+R(GK,T('G'))+' · 투입 '+M(T('K')),GK<0?'bad':''],['대기 소장',T('wait')+'명','미배치 '+T('unassigned')+' · 소장 미정 수주 '+T('orderNoPM'),T('unassigned')?'bad':''],['진행 현장',T('sites')+'개','적자 예상 '+A.reduce((a,[,,d])=>a+salesRows(d).filter(r=>gTot(r,2027)-cost(r,2027)<0).length,0)+' · 설변 진행 '+T('dc')]]));
+  p0.append(el('div',{class:'rcharts'},el('div',null,el('h4',null,'팀별 매출 — 2026 실적 vs 2027 계획'),barsV(A.map(x=>x[1]),[{name:'2026',vals:A.map(x=>x[3].sales26),color:'#B8BEC8'},{name:'2027',vals:A.map(x=>x[3].G),color:'#E8501A'}],{w:400,h:150,labels:true})),
+    el('div',null,el('h4',null,'팀별 2027 손익'),barsV(A.map(x=>x[1]),[{name:'손익',vals:A.map(x=>x[3].G-x[3].K),color:'#2F45A8'}],{w:260,h:150,labels:true}))));
   p0.append(sec('1. 2026 실적 → 2027 계획'));
   p0.append(tbl([{l:'구분',w:120},{l:'2026 목표',a:'n'},{l:'2026 실적',a:'n'},{l:'달성률',a:'n',w:70},{l:'2027 계획',a:'n'},{l:'전년 대비',a:'n',w:80}],[
     {c:['수주',M(T('ord26t')),M(T('ord26')),R(T('ord26'),T('ord26t')),M(T('target')),D(T('target'),T('ord26'))]},
@@ -1067,6 +1110,10 @@ function renderReport(){
   for(const [id,n,d,g] of A){
     const p=el('div',{class:'rp'}); const P=d.실적2026||{};
     p.append(pageHead(n+' 사업계획',(d.pm?'PM '+d.pm+' · ':'')+(d.status||'작성 중')+(d.updatedAt?' · 최종 '+fmtTime(d.updatedAt):'')));
+    p.append(kpiCards([['2027 수주목표',M(g.target)||'—',g.ord26?'2026 실적 '+M(g.ord26)+' · '+D(g.target,g.ord26):'목표 '+g.tcnt+'건 / 검토 '+(g.cnt-g.tcnt)+'건'],['2027 매출(기성)',M(g.G)||'—','2026 '+M(g.sales26)+' · '+D(g.G,g.sales26)],['2027 손익',M(g.G-g.K)||'—','이익률 '+R(g.G-g.K,g.G)+' · 투입 '+M(g.K),g.G-g.K<0?'bad':''],['대기 소장',g.wait+'명','미배치 '+g.unassigned+' · 소장 미정 수주 '+g.orderNoPM,g.unassigned?'bad':''],['진행 현장',g.sites+'개','적자 예상 '+salesRows(d).filter(r=>gTot(r,2027)-cost(r,2027)<0).length+' · 설변 진행 '+g.dc]]));
+    {const su0=orders(d).filter(r=>isFull(r)&&normProb(r.가능성)==='목표');const bb={};for(const r of su0){bb[r.건설사||'기타']=(bb[r.건설사||'기타']||0)+num(r.목표수주액)}const bi=Object.entries(bb).sort((x,y)=>y[1]-x[1]).slice(0,8).map(([l,v])=>({label:l,val:v}));
+     const pl=sites(d).map(r=>({label:r.현장명||'',val:gTot(r,2027)-cost(r,2027),color:'#2F45A8'})).filter(x=>x.val).sort((x,y)=>y.val-x.val);const pi=pl.length>12?[...pl.slice(0,6),...pl.slice(-6)]:pl;
+     if(bi.length||pi.length)p.append(el('div',{class:'rcharts'},el('div',null,el('h4',null,'건설사별 2027 수주목표'+(bi.length?'':' — 미입력')),bi.length?barsH(bi,{w:320,l:96}):el('div',{class:'rempty'},'수주목표 입력 전')),el('div',null,el('h4',null,'현장별 2027 손익'+(pl.length>12?' (상·하위 6)':'')),pi.length?barsH(pi,{w:340,l:150}):el('div',{class:'rempty'},'매출·손익 입력 전'))))}
     p.append(sec('1. 요약'));
     p.append(tbl([{l:'구분',w:120},{l:'2026 목표',a:'n'},{l:'2026 실적',a:'n'},{l:'달성률',a:'n',w:70},{l:'2027 계획',a:'n'},{l:'전년 대비',a:'n',w:80}],[
       {c:['수주',M(g.ord26t),M(g.ord26),R(g.ord26,g.ord26t),M(g.target),D(g.target,g.ord26)]},
