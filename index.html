@@ -161,6 +161,8 @@ table.ghd th.g{height:24px;font-weight:700;color:var(--ink);background:var(--sur
 table.ghd thead tr:nth-child(2) th{top:24px}
 table.ghd td.gsep,table.ghd th.gsep{border-left:1px solid var(--line-2)}
 table.ghd th.ed{background:var(--warn-bg);color:var(--warn-ink)}
+tr.newrow td{background:var(--accent-soft)}
+tr.newrow td.ro{font-weight:600;color:var(--accent-ink)}
 table.ghd td.ed,td.ed{background:var(--warn-bg)}
 table.ghd td.ed input{border-color:#E9C9A0;background:#fff}
 tbody tr:hover td.ed{background:var(--warn-cell)}
@@ -556,10 +558,10 @@ const hasPrev=r=>r.전회!==undefined&&r.전회!==''&&r.전회!==null;
 const hasPrevK=r=>r.전회투입!==undefined&&r.전회투입!==''&&r.전회투입!==null;
 const prevCum=(r,y)=>y===2026?(hasPrev(r)?num(r.전회)-gTot(r,2026):0):y===2027?num(r.전회):(hasPrev(r)?num(r.전회):0)+gTot(r,2027); // 해당 연도 이전 기성누계 (전회 = ~2026 말)
 const prevCost=(r,y)=>y===2026?(hasPrevK(r)?num(r.전회투입)-cost(r,2026):0):y===2027?num(r.전회투입):(hasPrevK(r)?num(r.전회투입):0)+cost(r,2027);
-const newRows=d=>bsort(d,d.신규매출||(d.신규매출=[]),r=>r.건설사,r=>r.현장명);
-const salesRows=d=>[...sites(d),...newRows(d)];
+const newRow=d=>{const a=d.신규매출||(d.신규매출=[]);if(!a.length)a.push({id:'new',건설사:'',현장명:'신규 수주 현장',계약:'',전회:'',전회투입:'',g2026:'',g2027:'',g2028:'',y2026:{자재:'',노무:'',간접:''},y2027:{자재:'',노무:'',간접:''},y2028:{자재:'',노무:'',간접:''},fixed:true});a[0].fixed=true;return a[0]};
+const salesRows=d=>[newRow(d),...sites(d)];
 function renderSales(d){
-  const y=curYear(); const base=sites(d), extra=newRows(d), rows=[...base,...extra];
+  const y=curYear(); const base=sites(d), nr=newRow(d), rows=[nr,...base];
   const P=d.실적2026||{};
   const prev=r=>prevCum(r,y), gY=r=>gTot(r,y), tot=r=>prev(r)+gY(r), pk=r=>prevCost(r,y), kY=r=>cost(r,y), ktot=r=>pk(r)+kY(r);
   const sum=f=>rows.reduce((a,r)=>a+f(r),0);
@@ -583,7 +585,7 @@ function renderSales(d){
   tb.append(el('thead',null,h1,h2)); const body=el('tbody');
   const gl=td=>{td.classList.add('gsep');return td};
   const line=(r,i,isNew)=>{const o=Y(r,y); const tr=el('tr',null,roCell(i,'c muted'));
-    if(isNew&&ed){tr.append(inputCell(d,r,{k:'건설사',dl:1}),inputCell(d,r,{k:'현장명'}),inputCell(d,r,{k:'계약',num:1},{after:render}))} else {tr.append(roCell(r.건설사,'c'),roCell(r.현장명),moneyCell(r.계약))}
+    if(isNew){tr.className='newrow';tr.append(roCell('','c'),roCell('신규 수주 현장'),ed?(()=>{const c=inputCell(d,r,{k:'계약',num:1},{after:render});c.classList.add('ed');return c})():moneyCell(r.계약||''))} else {tr.append(roCell(r.건설사,'c'),roCell(r.현장명),moneyCell(r.계약))}
     for(const yy of YEARS)if(r['g'+yy]===undefined||r['g'+yy]==='')r['g'+yy]=salesTotal(r,yy)||'';
     tr.append(gl(moneyCell(hasPrev(r)||y===2028?prev(r):'')));
     {const c=ed?inputCell(d,r,{k:'g'+y,num:1},{after:render}):moneyCell(gY(r)||'');if(ed)c.classList.add('ed');tr.append(c)}
@@ -595,13 +597,12 @@ function renderSales(d){
     tr.append(g||c?moneyCell(c):el('td'),moneyCell(kt||''),roCell(pct(kt,t),'num'));
     const p=g||c?moneyCell(g-c):el('td'); if(g-c<0)p.classList.add('bad');
     tr.append(gl(p),roCell(pct(g-c,g),'num'));
-    tr.append(isNew&&ed?delBtn(d.신규매출,d.신규매출.indexOf(r)):el('td')); return tr};
+    tr.append(el('td')); return tr};
+  body.append(line(nr,0,true));
   base.forEach((r,i)=>body.append(line(r,i+1,false)));
-  if(extra.length){body.append(el('tr',{class:'sec'},el('td',{colspan:20},'신규 현장 ('+extra.length+')')));extra.forEach((r,i)=>body.append(line(r,base.length+i+1,true)))}
   const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:3},'합계'),moneyCell(C),gl(moneyCell(PV)),moneyCell(G),moneyCell(PV+G),roCell(pct(PV+G,C),'num'),moneyCell(C-PV-G),gl(moneyCell(PK)));
   for(const k of ['자재','노무','간접'])sr.append(moneyCell(sum(r=>num(Y(r,y)[k])))); sr.append(moneyCell(K),moneyCell(PK+K),roCell(pct(PK+K,PV+G),'num'),gl(moneyCell(G-K)),roCell(pct(G-K,G),'num'),el('td'));
   body.append(sr); tb.append(body); card.append(el('div',{class:'nowrap'},tb));
-  if(!readonly&&ed)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{d.신규매출.push({id:uid(),건설사:'',현장명:'',계약:'',전회:'',전회투입:'',g2026:'',g2027:'',g2028:'',y2026:{자재:'',노무:'',간접:''},y2027:{자재:'',노무:'',간접:''},y2028:{자재:'',노무:'',간접:''}});save(team);render()}},'+ 신규 현장')));
   box.append(card); return box}
 // 인력 — 준공일정·소장 배치 (현장 구성 기준 자동, 준공월 미기재 현장은 여기서 선택)
 function renderAssign(d){
