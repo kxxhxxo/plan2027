@@ -196,7 +196,9 @@ const sectionOf=(d,sec)=>sec==='meta'?Object.fromEntries(META_KEYS.map(k=>[k,d[k
 const writable=sec=>ROLE==='admin'||sec!=='kpi';
 const snapshot=d=>Object.fromEntries(SECTIONS.filter(writable).map(sec=>[sec,JSON.stringify(sectionOf(d,sec)??null)]));
 function save(id){ if(readonly||!docs[id])return; docs[id].updatedAt=new Date().toISOString(); pending[id]=true; setStatus('저장 중'); clearTimeout(timers[id]); timers[id]=setTimeout(()=>flush(id),800); }
-async function post(body){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({id:cred.id,pw:cred.pw},body))});const j=await r.json();if(!j.ok)throw new Error(j.error||'save');return j}
+let chain=Promise.resolve();
+function post(body){ const run=async()=>{ let last; for(let i=0;i<3;i++){ try{ const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({id:cred.id,pw:cred.pw},body))}); let j; try{ j=await r.json() }catch(e){ throw new Error('server') } if(!j.ok)throw new Error(j.error||'save'); return j }catch(e){ last=e; if(e.message==='auth'||e.message==='forbidden')throw e; await new Promise(r=>setTimeout(r,1500*(i+1))) } } throw last };
+  const p=chain.then(run,run); chain=p.catch(()=>{}); return p }
 async function flush(id){
   if(inflight[id]){pending[id]=true;return}
   pending[id]=false; inflight[id]=true;
