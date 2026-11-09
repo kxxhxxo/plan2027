@@ -252,8 +252,11 @@ async function boot(j){
 const koKey=v=>String(v||'').replace(/㈜|\(주\)/g,'').trim();
 const ko=(a,b)=>koKey(a).localeCompare(koKey(b),'ko');
 const koSort=(arr,...fs)=>{arr.sort((x,y)=>{for(const f of fs){const c=ko(f(x),f(y));if(c)return c}return 0});return arr};
-const sites=d=>koSort(d.sites||(d.sites=[]),r=>r.건설사,r=>r.현장명);
-const orders=d=>koSort(d.수주목표||(d.수주목표=[]),r=>r.건설사,r=>r.현장명);
+const capOf=(d,name)=>{let m=-1;for(const r of (d.거래처||[]))if(koKey(r.건설사)===koKey(name)){const v=num(r.시평액);if(v>m)m=v}return m};
+const bcmp=d=>(a,b)=>{const x=capOf(d,a),y=capOf(d,b);if(x!==y)return y-x;return ko(a,b)};
+const bsort=(d,arr,bf,sf)=>{const c=bcmp(d);arr.sort((x,y)=>c(bf(x),bf(y))||ko(sf(x),sf(y)));return arr};
+const sites=d=>bsort(d,d.sites||(d.sites=[]),r=>r.건설사,r=>r.현장명);
+const orders=d=>bsort(d,d.수주목표||(d.수주목표=[]),r=>r.건설사,r=>r.현장명);
 const siteById=(d,id)=>sites(d).find(s=>s.id===id);
 const monthsOf=(r,y)=>{const k='m'+y;if(!Array.isArray(r[k])||r[k].length!==12)r[k]=['','','','','','','','','','','',''];return r[k]};
 const salesTotal=(r,y)=>monthsOf(r,y).reduce((a,v)=>a+num(v),0);
@@ -268,7 +271,7 @@ const builderOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.건설사:(r
 const waitPM=d=>[...(d.소장배치||[]).filter(r=>r.준공후==='대기'&&pmOf(d,r)).map(r=>({m:r.준공월,label:label(pmOf(d,r),r.준공월),ym:ym(r.준공월)})),
   ...(d.소장영입||[]).filter(r=>r.이름).map(r=>({m:r.영입시기||'',label:recruitLabel(r),ym:ym(r.영입시기),recruit:true}))].sort((a,b)=>a.ym-b.ym||a.label.localeCompare(b.label));
 const pickedBy=(d,field,lab)=>orders(d).find(x=>x[field]===lab);
-const clients=d=>[...new Set((d.거래처||[]).map(r=>r.건설사).filter(Boolean))].sort(ko);
+const clients=d=>[...new Set((d.거래처||[]).map(r=>r.건설사).filter(Boolean))].sort(bcmp(d));
 
 // ---- render
 function syncTop(){const t=$('.top');if(t)document.documentElement.style.setProperty('--topH',t.offsetHeight+'px')}
@@ -387,7 +390,7 @@ function renderOrders(d){
   return box}
 // 일반 목록
 function renderList(d,s){
-  const arr=d[sheet]||(d[sheet]=[]); if(sheet==='거래처')koSort(arr,r=>r.건설사,r=>r.담당부서,r=>r.담당자명);
+  const arr=d[sheet]||(d[sheet]=[]); if(sheet==='거래처')arr.sort((x,y)=>bcmp(d)(x.건설사,y.건설사)||ko(x.담당부서,y.담당부서)||ko(x.담당자명,y.담당자명));
   const box=el('div',{class:'sheet'},head(s.t,teamName(team),readonly?[]:[el('button',{class:'btn',onclick:()=>{arr.push(s.blank());save(team);render()}},'+ 행 추가')]));
   const tb=el('table'); const tr=el('tr',null,el('th',{style:'width:40px'},'No.'));
   for(const c of s.cols)tr.append(el('th',{style:'min-width:'+c.w+'px'},c.l)); tr.append(el('th',{style:'width:32px'},''));
@@ -479,7 +482,7 @@ function renderAssign(d){
   const siteSel=r=>{const td=el('td'); if(readonly){td.className='ro';td.textContent=siteOf(d,r);return td}
     const sel=el('select',{onchange:e=>{r.sid=e.target.value;const s=siteById(d,r.sid);if(s&&s.준공예정&&!r.준공월)r.준공월=s.준공예정.slice(0,7).replace('-','.');save(team);render()}});
     sel.append(el('option',{value:''},''));for(const s of sites(d))sel.append(el('option',{value:s.id},s.현장명));sel.value=r.sid||'';td.append(sel);return td};
-  const sorted=arr.map((r,i)=>[r,i]).sort((a,b)=>ko(builderOf(d,a[0]),builderOf(d,b[0]))||ko(siteOf(d,a[0]),siteOf(d,b[0])));
+  const sorted=arr.map((r,i)=>[r,i]).sort((a,b)=>bcmp(d)(builderOf(d,a[0]),builderOf(d,b[0]))||ko(siteOf(d,a[0]),siteOf(d,b[0])));
   for(const [r,i] of sorted){
     const pmN=pmOf(d,r);
     const tr2=el('tr'); tr2.append(inputCell(d,r,{k:'준공월',sel:'month'}),roCell(builderOf(d,r),'c'),siteSel(r));
@@ -580,8 +583,8 @@ function renderAll(){
   b4.append(el('tr',{class:'sum'},roCell('합계','c'),...KS.map(kk=>roCell(T(kk),'num'))));
   t4.append(b4); s4.append(el('div',{class:'wrap'},t4)); out.push(s4);
   const y=curYear(); const neg=[];
-  for(const [id,n,d] of list)for(const r of allSalesRows(d,y)){const g=salesTotal(r,y),c=cost(r,y);if(g-c<0)neg.push([n,r.건설사,r.현장명,r.소장||r.예비소장||'',g,c,g-c])}
-  neg.sort((a,b)=>ko(a[0],b[0])||ko(a[1],b[1])||ko(a[2],b[2]));
+  for(const [id,n,d] of list)for(const r of allSalesRows(d,y)){const g=salesTotal(r,y),c=cost(r,y);if(g-c<0)neg.push([n,r.건설사,r.현장명,r.소장||r.예비소장||'',g,c,g-c,capOf(d,r.건설사)])}
+  neg.sort((a,b)=>ko(a[0],b[0])||(b[7]-a[7])||ko(a[1],b[1])||ko(a[2],b[2]));
   const s5=el('div',{class:'sheet'},head('⑤ 리스크 — 적자 현장','기성 − 투입 < 0 · '+neg.length+'개 현장 · 단위: '+unitLabel()));
   s5.append(subtabs(YEARS.map(v=>[v,v+'년',null]),y,v=>setSub('year',v)));
   const t5=el('table'); t5.append(el('thead',null,el('tr',null,...[['팀',60],['건설사',120],['현장명',280],['소장',80],[y+' 기성',150],['투입',150],['손익',150]].map(([h,w])=>el('th',{style:'min-width:'+w+'px'},h)))));
