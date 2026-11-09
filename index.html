@@ -272,6 +272,7 @@ let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
 const MONTHS=(()=>{const a=[];for(let y=2026;y<=2028;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
 const PROB={'목표':1,'검토':0};
+const YEARS_B=(()=>{const a=[];const y0=new Date().getFullYear();for(let y=y0-25;y>=y0-70;y--)a.push(String(y));return a})();
 const normProb=v=>v==='확정'||v==='유력'||v==='목표'?'목표':v?'검토':'';
 const STATUS=['작성 중','제출','확정'];
 const DC_STATUS=['당초','1차 진행중','1차 완료','2차 진행중','2차 완료','3차 진행중','3차 완료','4차 진행중','4차 완료','정산 중','정산완료','추가공사'];
@@ -299,9 +300,9 @@ const SHEETS={
    blank:()=>({건설사:'',시평액:'',순위:'',등록현황:'',협력3사:'',특장점:'',지원필요:'',비고:''})},
  이슈:{t:'이슈 · 설계변경/정산',special:'issues'},
  소장영입:{t:'현장소장 발굴 및 영입 계획',list:true,cols:[
-   {k:'이름',l:'이름',w:90},{k:'출생년도',l:'출생년도',w:80,raw:1},{k:'나이',l:'나이',w:60,calcText:r=>{const y=num(r.출생년도);return y>1900?String(new Date().getFullYear()-y+1)+'세':''}},{k:'경력',l:'경력 (년)',w:80,raw:1},{k:'자격증',l:'자격증',w:200},{k:'희망지역',l:'희망 근무지역',w:120},{k:'영입시기',l:'영입 예정 시기',w:110,sel:'month'},
+   {k:'이름',l:'이름',w:90},{k:'현재회사',l:'현재 근무회사',w:160},{k:'출생년도',l:'출생년도',w:90,sel:'year'},{k:'나이',l:'나이',w:60,calcText:r=>{const y=num(r.출생년도);return y>1900?String(new Date().getFullYear()-y+1)+'세':''}},{k:'경력',l:'경력 (년)',w:80,raw:1},{k:'자격증',l:'자격증',w:200},{k:'희망지역',l:'희망 근무지역',w:120},{k:'영입시기',l:'영입 예정 시기',w:110,sel:'month'},
    {k:'배치현장',l:'배치 예정 현장',w:240,calcText:(r,d)=>{const a=pickedBy(d,'예비소장',recruitLabel(r));return a?a.현장명+(a.예정?' ('+a.예정+' 착공)':''):''}}],
-   blank:()=>({이름:'',출생년도:'',경력:'',자격증:'',희망지역:'',영입시기:''})},
+   blank:()=>({이름:'',현재회사:'',출생년도:'',경력:'',자격증:'',희망지역:'',영입시기:''})},
 };
 let docs={}, team='t1', sheet='수주목표', readonly=false, subtab={}, cred=null, lastSaved={};
 try{team=localStorage.getItem('bp.team')||team; sheet=localStorage.getItem('bp.sheet')||sheet; subtab=JSON.parse(localStorage.getItem('bp.sub')||'{}')}catch(e){}
@@ -453,8 +454,8 @@ function inputCell(d,row,col,opts){
   if(col.calcText){td.className='ro';td.textContent=col.calcText(row,d);return td}
   const money=col.num&&!col.raw;
   if(readonly||o.lock){td.className='ro'+(col.num?' num':'')+(o.lock?' lock':'');td.textContent=money?fmtM(row[col.k]):col.num?fmt(row[col.k]):(row[col.k]??'');return td}
-  if(col.sel==='month'||col.sel==='prob'||col.sel==='credit'||col.sel==='dc'||col.sel==='step'){
-    const opt=col.sel==='month'?MONTHS:col.sel==='prob'?Object.keys(PROB):col.sel==='dc'?DC_STATUS:col.sel==='step'?DC_STEP:['정상','주의','위험'];
+  if(col.sel==='month'||col.sel==='prob'||col.sel==='credit'||col.sel==='dc'||col.sel==='step'||col.sel==='year'){
+    const opt=col.sel==='month'?MONTHS:col.sel==='prob'?Object.keys(PROB):col.sel==='dc'?DC_STATUS:col.sel==='step'?DC_STEP:col.sel==='year'?YEARS_B:['정상','주의','위험'];
     const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(o.team||team);render()}});
     sel.append(el('option',{value:''},''));for(const m of opt)sel.append(el('option',{value:m},m));sel.value=col.sel==='prob'?normProb(row[col.k]):(row[col.k]||'');td.append(sel);
     if(col.sel==='credit'&&row[col.k]==='위험')td.className='bad'; if(col.sel==='credit'&&row[col.k]==='주의')td.className='caution';
