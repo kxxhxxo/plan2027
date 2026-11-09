@@ -629,11 +629,14 @@ function renderOrders(d){
   const box=el('div',{class:'cards'},top);
   // 왼쪽: 건설사 카드(선택 탭)
   const left=el('div',{class:'lcard'});
-  const lt=el('table'); lt.append(el('thead',null,el('tr',null,...['건설사','2027 목표','건수'].map(h=>el('th',null,h)))));
+  const B26=(d.실적2026||{}).건설사||{}; const nk=v=>koKey(v).replace(/\s|주식회사/g,'');
+  const b26=c=>{if(c==='기타'){let t=0;for(const k in B26){if(k==='기타'||!cl.some(x=>nk(x)===nk(k)))t+=num(B26[k].당초)+num(B26[k].변경)}return t}const k=Object.keys(B26).find(k=>nk(k)===nk(c));return k?num(B26[k].당초)+num(B26[k].변경):0};
+  const lt=el('table'); lt.append(el('thead',null,el('tr',null,...['건설사','2026 실적','2027 목표','건수'].map(h=>el('th',null,h)))));
   const lb=el('tbody');
   const names=[...cl,'기타'];
   for(const c of names){const rs=rowsOf(c); const tr=el('tr',{class:'pick'+(c===cur?' on':''),onclick:()=>setSub('builder',c)});
-    tr.append(roCell(c,'bname'),moneyCell(tg(rs)||''),roCell(rs.filter(isFull).length||'','num')); lb.append(tr)}
+    tr.append(roCell(c,'bname'),moneyCell(b26(c)||''),moneyCell(tg(rs)||''),roCell(rs.filter(isFull).length||'','num')); lb.append(tr)}
+  {const tot=names.reduce((a,c)=>a+b26(c),0); lb.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(tot||''),moneyCell(tg(all)||''),roCell(all.filter(isFull).length||'','num')))}
   lb.append(el('tr',{class:'sum'},roCell('합계','bname'),moneyCell(tg(all)),roCell(all.filter(isFull).length,'num')));
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
   // 오른쪽: 선택 건설사 입력
