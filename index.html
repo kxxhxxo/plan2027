@@ -576,7 +576,7 @@ function renderSales(d){
   const groups=[['',[['No.',34],['건설사',78],['현장명',0],['계약금액',W.m]]],
     ['기성',[['전회누계',W.m],[y+' 기성',W.m],['누계',W.m],['기성률',W.p],['잔여',W.m]]],
     ['투입',[['전회누계',W.m],['자재비',W.m],['급여·노무비',W.m],['본사경비',W.m],[y+' 투입',W.m],['누계',W.m],['투입률',W.p]]],
-    ['손익',[['손익',W.m],['이익률',W.p]]],['',[['',24]]]];
+    ['손익',[['손익',W.m],['이익률',W.p]]]];
   const card=el('div',{class:'sheet'});
   card.append(subtabs(YEARS.map(v=>[v,v+'년']),y,v=>setSub('year',v)));
   const tb=el('table',{class:'fit ghd'}); const h1=el('tr'),h2=el('tr'),cg=el('colgroup');
@@ -597,11 +597,11 @@ function renderSales(d){
     tr.append(g||c?moneyCell(c):el('td'),moneyCell(kt||''),roCell(pct(kt,t),'num'));
     const p=g||c?moneyCell(g-c):el('td'); if(g-c<0)p.classList.add('bad');
     tr.append(gl(p),roCell(pct(g-c,g),'num'));
-    tr.append(el('td')); return tr};
+    return tr};
   body.append(line(nr,0,true));
   base.forEach((r,i)=>body.append(line(r,i+1,false)));
   const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:3},'합계'),moneyCell(C),gl(moneyCell(PV)),moneyCell(G),moneyCell(PV+G),roCell(pct(PV+G,C),'num'),moneyCell(C-PV-G),gl(moneyCell(PK)));
-  for(const k of ['자재','노무','간접'])sr.append(moneyCell(sum(r=>num(Y(r,y)[k])))); sr.append(moneyCell(K),moneyCell(PK+K),roCell(pct(PK+K,PV+G),'num'),gl(moneyCell(G-K)),roCell(pct(G-K,G),'num'),el('td'));
+  for(const k of ['자재','노무','간접'])sr.append(moneyCell(sum(r=>num(Y(r,y)[k])))); sr.append(moneyCell(K),moneyCell(PK+K),roCell(pct(PK+K,PV+G),'num'),gl(moneyCell(G-K)),roCell(pct(G-K,G),'num'));
   body.append(sr); tb.append(body); card.append(el('div',{class:'nowrap'},tb));
   box.append(card); return box}
 // 인력 — 준공일정·소장 배치 (현장 구성 기준 자동, 준공월 미기재 현장은 여기서 선택)
