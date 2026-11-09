@@ -613,14 +613,28 @@ function xlsxUpload(d){
     const hi=aoa.findIndex(r=>r.some(c=>String(c).includes('현장명'))); if(hi<0){alert('머리글(현장명)을 찾지 못했습니다. 양식 파일을 그대로 쓰세요');return}
     const H=aoa[hi].map(c=>String(c)); const ix=k=>H.findIndex(h=>h.startsWith(k));
     const I={건설사:ix('건설사'),현장명:ix('현장명'),수주액:ix('수주액'),구분:ix('구분'),착공:ix('착공'),예비:ix('예비소장'),영업:ix('영업현황')};
-    const cl=clients(d); const mon=v=>{if(v instanceof Date)return v.getFullYear()+'.'+String(v.getMonth()+1).padStart(2,'0');const t=String(v||'').trim().replace(/[-\/]/g,'.');const m=t.match(/^(\d{4})\.(\d{1,2})/);return m?m[1]+'.'+m[2].padStart(2,'0'):''};
-    const out=[];const bad=[];
-    for(const r of aoa.slice(hi+1)){const g=v=>I[v]>=0?r[I[v]]:'';const name=String(g('현장명')||'').trim();if(!name&&!String(g('건설사')||'').trim())continue;
-      let b=String(g('건설사')||'').trim(); const hit=cl.find(c=>koKey(c)===koKey(b)); if(hit)b=hit; else if(b)bad.push(b);
-      out.push({id:uid(),건설사:b,현장명:name,목표수주액:parseM(g('수주액')),가능성:normProb(String(g('구분')||'').trim()),예정:mon(g('착공')),예비소장:String(g('예비')||'').trim(),영업현황:String(g('영업')||'').trim()})}
-    if(!out.length){alert('읽어온 행이 없습니다');return}
-    if(!confirm(out.length+'건을 읽었습니다. 현재 수주목표 '+orders(d).filter(r=>r.현장명||r.건설사).length+'건을 모두 지우고 이 내용으로 바꿉니다.'+(bad.length?'\n\n거래처 리스트에 없는 건설사('+[...new Set(bad)].join(', ')+')는 기타 탭에 들어갑니다.':'')))return;
-    d.수주목표=out; sortOrders(d); save(team); setSub('builder',cl[0]||'기타')};
+    const cl=clients(d); const nk=v=>String(v||'').replace(/㈜|\(주\)|주식회사|\s/g,'');
+    const findB=b=>{if(!b)return '';let h=cl.find(c=>nk(c)===nk(b));if(h)return h;h=cl.find(c=>nk(c).length>=2&&(nk(c).includes(nk(b))||nk(b).includes(nk(c))));return h||''};
+    const pmList=waitPM(d); const findPM=v=>{v=String(v||'').trim();if(!v)return '';if(pmList.some(x=>x.label===v))return v;const nm=v.replace(/\s*\(.*\)\s*$/,'').trim();const h=pmList.find(x=>x.label.startsWith(nm+' ('));return h?h.label:null};
+    const mon=v=>{if(v instanceof Date)return v.getFullYear()+'.'+String(v.getMonth()+1).padStart(2,'0');const t=String(v||'').trim().replace(/[-\/년]/g,'.').replace(/월/g,'');const m=t.match(/^(\d{4})\.\s*(\d{1,2})/);return m?m[1]+'.'+m[2].padStart(2,'0'):(t?null:'')};
+    const prob=v=>{v=String(v||'').trim();if(!v)return '';const p=normProb(v);return p==='목표'||p==='검토'?p:(/^(o|O|○|●|y|Y|목표)/.test(v)?'목표':/^(x|X|△|검토)/.test(v)?'검토':null)};
+    const rows=[];
+    for(const r of aoa.slice(hi+1)){const g=v=>I[v]>=0?r[I[v]]:'';const name=String(g('현장명')||'').trim();const braw=String(g('건설사')||'').trim();if(!name&&!braw)continue;
+      const b=findB(braw), pm=findPM(g('예비')), m=mon(g('착공')), pr=prob(g('구분'));
+      rows.push({braw,b,name,amt:parseM(g('수주액')),pr,praw:String(g('구분')||''),m,mraw:String(g('착공')||''),pm,pmraw:String(g('예비')||'').trim(),biz:String(g('영업')||'').trim()})}
+    if(!rows.length){alert('읽어온 행이 없습니다');return}
+    // 미리보기
+    const ov=el('div',{class:'modal'});const bx=el('div',{class:'mbox'});
+    const issues=rows.filter(r=>(r.braw&&!r.b)||r.pm===null||r.m===null||r.pr===null).length;
+    bx.append(el('div',{class:'sheethead'},el('h2',null,'엑셀 올리기 — 확인'),el('span',{class:'note'},rows.length+'건 읽음 · 확인 필요 '+issues+'건 · 반영하면 현재 수주목표 '+orders(d).filter(r=>r.현장명||r.건설사).length+'건을 모두 바꿈'),el('span',{style:'margin-left:auto'}),el('button',{class:'btn',onclick:()=>ov.remove()},'취소'),el('button',{class:'btn primary',onclick:()=>{
+      d.수주목표=rows.map(r=>({id:uid(),건설사:r.b||r.braw,현장명:r.name,목표수주액:r.amt,가능성:r.pr||'',예정:r.m||'',예비소장:r.pm===null?'':r.pm,영업현황:r.biz}));sortOrders(d);save(team);ov.remove();setSub('builder',cl[0]||'기타')}},'이대로 반영')));
+    const t=fitTable([{l:'건설사 (엑셀)',w:130},{l:'→ 매칭',w:130},{l:'현장명',flex:1},{l:'수주액',w:120},{l:'구분',w:70},{l:'착공',w:80},{l:'예비소장 (엑셀)',w:150},{l:'→ 매칭',w:150}],true,false);const tb=el('tbody');
+    const bad=(td)=>{td.classList.add('bad');return td};
+    rows.forEach((r,i)=>{const tr=el('tr',null,roCell(i+1,'c muted'),roCell(r.braw),r.braw&&!r.b?bad(roCell('없음 → 기타','c')):roCell(r.b,'c'),roCell(r.name),moneyCell(r.amt||''),
+      r.pr===null?bad(roCell(r.praw+' → ?','c')):roCell(r.pr,'c'),r.m===null?bad(roCell(r.mraw+' → ?','c')):roCell(r.m,'c'),roCell(r.pmraw),r.pm===null?bad(roCell('목록에 없음 → 비움','c')):roCell(r.pm,'c'));tb.append(tr)});
+    t.append(tb);bx.append(el('div',{class:'mscroll'},t));
+    bx.append(el('div',{class:'foot'},el('span',null,'빨간 칸은 사이트 기준과 달라 바꿔서 들어가는 값 — 반영 후 화면에서 고치거나, 엑셀을 수정해 다시 올리기')));
+    ov.append(bx);document.body.append(ov)};
   inp.click()}
 function renderOrders(d){
   const all=orders(d); const cl=clients(d); const isOther=r=>!cl.includes(r.건설사);
