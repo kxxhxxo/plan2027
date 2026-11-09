@@ -317,7 +317,7 @@ td.link:hover{background:var(--accent-soft)}
 (function(){
 'use strict';
 const API='https://script.google.com/macros/s/AKfycbyNyN0wcDLsnnkl9d1DnGzDdadOWu9OInh1rJy4w-CldrTEX46BDmLe5HE0YyUkTwII/exec';
-const ALL_TEAMS=[['t1','1팀'],['t2','2팀'],['t3','t3'],['t4','4팀'],['t5','5팀'],['t6','6팀'],['gov','관급'],['all','취합']];
+const ALL_TEAMS=[['t1','1팀'],['t2','2팀'],['t3','3팀'],['t4','4팀'],['t5','5팀'],['t6','6팀'],['gov','관급'],['all','취합']];
 ALL_TEAMS[2][1]='3팀';
 let TEAMS=ALL_TEAMS;
 const SECTIONS=['meta','kpi','sites','수주목표','매출목표','신규매출','소장배치','거래처','신규거래처','소장영입','교육계획'];
@@ -544,9 +544,12 @@ function inputCell(d,row,col,opts){
   if(col.area){td.append(el('textarea',{rows:1,oninput:e=>{row[col.k]=e.target.value;save(o.team||team)}},row[col.k]??''));return td}
   const inp=el('input',{type:'text',value:money?fmtM(row[col.k]):col.num?fmt(row[col.k]):(row[col.k]??''),class:col.num?'num':'',
     oninput:e=>{row[col.k]=money?parseM(e.target.value):col.num?String(e.target.value).replace(/[^\d.-]/g,''):e.target.value;save(o.team||team);if(o.live)o.live()},
-    onblur:e=>{if(money)e.target.value=fmtM(row[col.k]);else if(col.num)e.target.value=fmt(row[col.k]);if(o.after)o.after()}});
+    onblur:e=>{if(money)e.target.value=fmtM(row[col.k]);else if(col.num)e.target.value=fmt(row[col.k]);if(o.after)keepFocus(e.relatedTarget,o.after)}});
   if(col.dl)inp.setAttribute('list','dlClients');
   td.append(inp);return td}
+// 셀을 벗어나며 화면을 다시 그릴 때, 다음에 포커스될 요소(Tab 이동)를 같은 위치로 되찾아 줌
+const FOC='input,select,textarea';
+function keepFocus(next,fn){const all=next?[...$('#main').querySelectorAll(FOC)]:[];const i=all.indexOf(next);fn();if(i>=0){const f=$('#main').querySelectorAll(FOC)[i];if(f){f.focus();if(f.select&&f.tagName!=='SELECT')f.select()}}}
 function delBtn(arr,i,extra,tid){ const td=el('td',{class:'c'}); if(!readonly)td.append(el('button',{class:'del',title:'행 삭제',onclick:()=>{arr.splice(i,1);if(extra)extra();save(tid||team);render()}},'×')); return td }
 function sumRow(label,cols,rows,sumKeys){const r=el('tr',{class:'sum'},roCell(label,'c'));for(const c of cols){if(sumKeys.includes(c.k))r.append(moneyCell(rows.reduce((a,x)=>a+num(c.calc?c.calc(x):x[c.k]),0)));else r.append(el('td'))}r.append(el('td'));return r}
 function prevYear(d,kind,target27){
@@ -713,7 +716,7 @@ function renderSites(d){
     const sel=el('select',{onchange:e=>{row.준공예정=e.target.value?e.target.value.replace('.','-'):'';save(team);render()}}); sel.append(el('option',{value:''},''));
     const cur=toYM(row.준공예정); const list=[...SITE_MONTHS]; if(cur&&!list.includes(cur))list.unshift(cur); for(const m of list)sel.append(el('option',{value:m},m)); sel.value=cur; td.append(sel); return td};
   const pmCell=row=>{const td=el('td',{class:'ed'}); if(readonly){td.className='ro c';td.textContent=row.소장||'';return td}
-    td.append(el('input',{type:'text',list:dlid,value:row.소장||'',oninput:e=>{row.소장=e.target.value;save(team)},onchange:()=>render()})); return td};
+    td.append(el('input',{type:'text',list:dlid,value:row.소장||'',oninput:e=>{row.소장=e.target.value;save(team)},onblur:e=>keepFocus(e.relatedTarget,render)})); return td};
   arr.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); const m=toYM(row.준공예정); const inWin=m&&ym(m)>=WIN[0]&&ym(m)<=WIN[1]&&row.소장; const a=row.소장?pickedBy(d,'예비소장',label(row.소장.trim(),m||'')):null;
     for(const c of cols){ if(c.k==='준공예정')r.append(monthCell(row)); else if(c.k==='소장'){const td=pmCell(row);if(inWin)td.classList.add('wait');r.append(td)}
       else if(['보조공무','공사부장','안전담당'].includes(c.k)){const td=inputCell(d,row,c);td.classList.add('ed');r.append(td)}
