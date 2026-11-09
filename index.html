@@ -697,8 +697,8 @@ function renderSales(d){
   const sum=f=>rows.reduce((a,r)=>a+f(r),0);
   const C=sum(r=>num(r.계약)), PV=sum(prev), G=sum(gY), PK=sum(pk), K=sum(kY);
   const G27=sum(r=>gTot(r,2027)),K27=sum(r=>cost(r,2027));
-  const S26=sum(r=>gTot(r,2026));
-  const kv=kvTable([['2026년 매출',[['목표',[['연간 목표',fmtM(P.매출목표)]],'tg'],['실적',[['예정 기성 (전망)',fmtM(S26),'hero']],'ta'],['달성률',[['실적 ÷ 목표',rate(S26,num(P.매출목표))]],'tr']]],
+  const S26=sum(r=>gTot(r,2026))+num(P.준공기성2026);
+  const kv=kvTable([['2026년 매출',[['목표',[['연간 목표',fmtM(P.매출목표)]],'tg'],['실적',[['진행 현장',fmtM(sum(r=>gTot(r,2026))),'sm'],['2026 준공 현장',fmtM(P.준공기성2026),'sm'],['예정 기성 합계',fmtM(S26),'hero']],'ta'],['달성률',[['실적 ÷ 목표',rate(S26,num(P.매출목표))]],'tr']]],
     ['2027년 계획',[['매출',[['기성',fmtM(G27),'hero hi'],['전년 대비',delta(G27,S26)]],'ta'],['손익',[['투입',fmtM(K27),'sm'],['손익',fmtM(G27-K27),G27-K27<0?'hero bad':'hero'],['이익률',pct(G27-K27,G27),'sm']],'ta']],true],
     [y+'년 누계',[['기성',[['계약 합계',fmtM(C),'sm'],['기성누계',fmtM(PV+G),'hero'],['기성률',pct(PV+G,C),'sm']],'ta'],['투입',[['투입누계',fmtM(PK+K),'sm'],['투입률',pct(PK+K,PV+G),'sm']],'tg']]]]);
   const box=el('div',{class:'cards'},topCard('매출·손익',teamName(team)+' · 단위: '+unitLabel(),kv));
@@ -848,7 +848,7 @@ function renderAll(){
     const rs=salesRows(d); const C=rs.reduce((a,r)=>a+num(r.계약),0),PV=rs.reduce((a,r)=>a+num(r.전회),0),G=rs.reduce((a,r)=>a+gTot(r,2027),0),K=rs.reduce((a,r)=>a+cost(r,2027),0);
     return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,
       cnt:su.length,target:su.filter(r=>normProb(r.가능성)==='목표').reduce((a,r)=>a+num(r.목표수주액),0),tcnt:su.filter(r=>normProb(r.가능성)==='목표').length,orderNoPM:su.filter(r=>!r.예비소장).length,
-      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:rs.reduce((a,r)=>a+gTot(r,2026),0),sales26t:num(P.매출목표),C,PV,G,K,risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
+      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:rs.reduce((a,r)=>a+gTot(r,2026),0)+num(P.준공기성2026),sales26t:num(P.매출목표),C,PV,G,K,risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
   const A=list.map(([id,n,d])=>[id,n,d,agg(d)]);
   const T=k=>A.reduce((a,x)=>a+x[3][k],0);
   const out=[];
@@ -869,12 +869,12 @@ function renderAll(){
     b1.append(el('tr',null,roCell(n,'c'),pmTd,roCell(d.status||STATUS[0],'c'),dc,roCell(missing(d).join(', '),'muted'),roCell(fmtTime(d.updatedAt),'c'),td))}
   t1.append(b1); s1.append(el('div',{class:'wrap'},t1));
   if(!readonly){const bx=el('div',{class:'foot',style:'flex-direction:column;align-items:stretch;gap:6px'});
-    bx.append(el('span',null,'2026 수주·매출 일괄 입력 (억원) — 한 줄에 한 팀: 팀, 수주목표, 당초, 변경, 매출목표, 매출실적'));
+    bx.append(el('span',null,'2026 수주·매출 일괄 입력 (억원) — 한 줄에 한 팀: 팀, 수주목표, 당초, 변경, 매출목표, 매출실적, 2026 준공현장 기성'));
     const ta=el('textarea',{rows:3,style:'font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--panel);color:var(--fg);width:100%;box-sizing:border-box',placeholder:'1팀, 600, 696.9, 88.9, 550, 445'});
     const msg=el('span'); const btn=el('button',{class:'btn',style:'align-self:flex-start',onclick:()=>{const names=Object.fromEntries(ALL_TEAMS.map(([id,n])=>[n,id]));let ok=0,bad=[];
       for(const line of ta.value.split(/\n/)){const p=line.split(/[,\t]/).map(x=>x.trim());if(p.length<2||!p[0])continue;const id=names[p[0]]||names[p[0]+'팀']||(ALL_TEAMS.some(x=>x[0]===p[0])?p[0]:null);const d=id&&docs[id];if(!d){bad.push(p[0]);continue}
         const P=d.실적2026||(d.실적2026={});const v=i=>p[i]!==undefined&&p[i]!==''?String(Math.round(Number(p[i].replace(/,/g,''))*1e8)):undefined;
-        const a=v(1),b=v(2),c=v(3),e=v(4),f=v(5);if(a!==undefined)P.수주목표=a;if(b!==undefined)P.수주실적당초=b;if(c!==undefined)P.수주실적변경=c;P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));if(e!==undefined)P.매출목표=e;if(f!==undefined)P.매출실적=f;save(id);ok++}
+        const a=v(1),b=v(2),c=v(3),e=v(4),f=v(5),g=v(6);if(g!==undefined)P.준공기성2026=g;if(a!==undefined)P.수주목표=a;if(b!==undefined)P.수주실적당초=b;if(c!==undefined)P.수주실적변경=c;P.수주실적=String(num(P.수주실적당초)+num(P.수주실적변경));if(e!==undefined)P.매출목표=e;if(f!==undefined)P.매출실적=f;save(id);ok++}
       msg.textContent=ok+'팀 반영 — 상단에 저장됨이 뜰 때까지 새로고침하지 마세요'+(bad.length?' · 못 찾음: '+bad.join(', '):'');render()}},'반영');
     bx.append(ta,el('div',{class:'row'},btn,msg));
     bx.append(el('span',{style:'margin-top:8px'},'현장별 전회 기성누계 일괄 입력 (원) — 한 줄에 하나: 팀, 현장명, 전회 기성누계'));
