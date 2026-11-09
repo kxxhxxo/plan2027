@@ -127,7 +127,7 @@ button{cursor:pointer}
 .kvt td.caution{color:var(--warn-ink);background:var(--surface)!important}
 .kvt td small{display:none}
 .kvt td.dim{color:var(--ink-3);font-weight:400}
-.kvt th.sg{height:24px;font-weight:700;color:var(--ink);background:var(--surface);border-bottom:1px solid var(--line)}
+.kvt th.sg{height:24px;font-weight:700;color:var(--ink);background:var(--surface-2);border-bottom:1px solid var(--line)}
 .kvt th.lb{background:var(--surface-2)}
 .kvt th.rs{height:50px}
 .kvt td.tg{color:var(--ink-2)}
@@ -504,8 +504,8 @@ function kvTable(groups){ // groups: [[title, items, hi]] · item = [label,value
   const flat=g=>g[1].flatMap(it=>Array.isArray(it[1])?it[1]:[it]);
   groups.forEach((g,gi)=>{const gs=gi>0?' gs':''; h1.append(el('th',{colspan:flat(g).length,class:'g'+(g[2]?' hi':'')+gs},g[0]));
     g[1].forEach((it,i)=>{const ss=(i>0?' sgs':'')+(i===0?gs:'');
-      if(Array.isArray(it[1])){h2.append(el('th',{colspan:it[1].length,class:'sg'+ss},it[0]));
-        it[1].forEach((x,k)=>{const cs=k===0?ss:'';h3.append(el('th',{class:'lb'+cs},x[0]));vr.append(el('td',{class:'ro num'+(x[2]?' '+x[2]:'')+cs},x[1]))})}
+      if(Array.isArray(it[1])){const one=it[1].length===1; h2.append(el('th',one?{rowspan:2,class:'sg rs'+ss}:{colspan:it[1].length,class:'sg'+ss},it[0]));
+        it[1].forEach((x,k)=>{const cs=k===0?ss:'';if(!one)h3.append(el('th',{class:'lb'+cs},x[0]));vr.append(el('td',{class:'ro num'+(x[2]?' '+x[2]:'')+cs},x[1]))})}
       else{h2.append(el('th',hasSub?{rowspan:2,class:'rs lb'+ss}:{class:'lb'+ss},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+ss},it[1]))}})});
   const th=el('thead',null,h1,h2); if(hasSub)th.append(h3); t.append(th,el('tbody',null,vr)); return t}
 function topCard(title,note,kv){ return el('div',{class:'sheet topcard'},el('div',{class:'sheethead'},el('div',{class:'titlebox'},el('h2',null,title),el('span',{class:'note'},note)),kv)) }
