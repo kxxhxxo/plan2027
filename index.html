@@ -90,7 +90,13 @@ button{cursor:pointer}
 .topcard .titlebox{grid-row:1;grid-column:1;display:flex;align-items:baseline;gap:10px;min-width:0;white-space:nowrap}
 .topcard .titlebox h2{font-size:19px;font-weight:700;letter-spacing:-.02em;flex:none}
 .topcard .titlebox .note{color:var(--ink-3);font-size:12px;overflow:hidden;text-overflow:ellipsis}
-.topcard .bar.inline{grid-row:1;grid-column:2;margin:0}
+.topcard .bar.inline{grid-row:1;grid-column:2;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 10px 5px 14px;gap:6px 12px}
+.bar.inline>span{display:inline-flex;align-items:center;gap:4px}
+.bar.inline .stbox{padding-left:12px;border-left:1px solid var(--line)}
+.bar.inline .btn.chk{border-color:var(--line-2)}
+.bar.inline .btn.chk.on{background:var(--st-done-bg);border-color:#7fc79a;color:var(--st-done)}
+.stv.s1{background:var(--st-conf-bg);color:var(--st-conf)}
+.stv.s2{background:var(--st-done-bg);color:var(--st-done)}
 .topcard .kvt{grid-row:2;grid-column:1/-1;justify-self:start}
 .bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12px}
 .bar label{color:var(--ink-3);margin-right:4px}
@@ -279,6 +285,7 @@ textarea.rvin{width:100%;border:1px solid var(--line-2);border-radius:6px;paddin
 <datalist id="dlClients"></datalist>
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
 'use strict';
@@ -554,6 +561,33 @@ function renderGuide(d){
   const box=el('div',{class:'cards'},topCard('작성 순서',teamName(team)+' · 2027년 사업계획서',kvTable([['기본',[['단위','원 (우상단에서 억 전환)'],['저장','입력 즉시 자동 저장'],['상태',(d.status||'작성 중')],['확인 완료',doneCnt(d)+' / '+CHECK_PAGES.length],['수정','제출 후에는 본사가 열어줌']]]])));
   box.append(el('div',{class:'sheet'},wrap));
   return box}
+// 수주목표 엑셀 양식 / 업로드
+const XCOLS=['건설사','현장명','수주액(원)','구분(목표/검토)','착공 예정(YYYY.MM)','예비소장','영업현황'];
+function xlsxTemplate(d){
+  if(typeof XLSX==='undefined'){alert('엑셀 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도');return}
+  const rows=orders(d).filter(r=>r.현장명||r.건설사).map(r=>[r.건설사,r.현장명,num(r.목표수주액)||'',r.가능성,r.예정,r.예비소장,r.영업현황]);
+  while(rows.length<15)rows.push(['','','','','','','']);
+  const ws=XLSX.utils.aoa_to_sheet([XCOLS,...rows]); ws['!cols']=[{wch:16},{wch:40},{wch:16},{wch:12},{wch:14},{wch:16},{wch:40}];
+  const ws2=XLSX.utils.aoa_to_sheet([['건설사 (수주목표 탭과 동일하게 입력)'],...clients(d).map(c=>[c])]); ws2['!cols']=[{wch:30}];
+  const ws3=XLSX.utils.aoa_to_sheet([['예비소장 (이 중에서 그대로 복사)'],...waitPM(d).map(x=>[x.label])]); ws3['!cols']=[{wch:30}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'수주목표'); XLSX.utils.book_append_sheet(wb,ws2,'건설사'); XLSX.utils.book_append_sheet(wb,ws3,'예비소장');
+  XLSX.writeFile(wb,'2027_수주목표_'+teamName(team)+'.xlsx')}
+function xlsxUpload(d){
+  if(typeof XLSX==='undefined'){alert('엑셀 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도');return}
+  const inp=el('input',{type:'file',accept:'.xlsx,.xls'}); inp.onchange=async()=>{const f=inp.files[0];if(!f)return;
+    const wb=XLSX.read(await f.arrayBuffer()); const ws=wb.Sheets['수주목표']||wb.Sheets[wb.SheetNames[0]]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const hi=aoa.findIndex(r=>r.some(c=>String(c).includes('현장명'))); if(hi<0){alert('머리글(현장명)을 찾지 못했습니다. 양식 파일을 그대로 쓰세요');return}
+    const H=aoa[hi].map(c=>String(c)); const ix=k=>H.findIndex(h=>h.startsWith(k));
+    const I={건설사:ix('건설사'),현장명:ix('현장명'),수주액:ix('수주액'),구분:ix('구분'),착공:ix('착공'),예비:ix('예비소장'),영업:ix('영업현황')};
+    const cl=clients(d); const mon=v=>{if(v instanceof Date)return v.getFullYear()+'.'+String(v.getMonth()+1).padStart(2,'0');const t=String(v||'').trim().replace(/[-\/]/g,'.');const m=t.match(/^(\d{4})\.(\d{1,2})/);return m?m[1]+'.'+m[2].padStart(2,'0'):''};
+    const out=[];const bad=[];
+    for(const r of aoa.slice(hi+1)){const g=v=>I[v]>=0?r[I[v]]:'';const name=String(g('현장명')||'').trim();if(!name&&!String(g('건설사')||'').trim())continue;
+      let b=String(g('건설사')||'').trim(); const hit=cl.find(c=>koKey(c)===koKey(b)); if(hit)b=hit; else if(b)bad.push(b);
+      out.push({id:uid(),건설사:b,현장명:name,목표수주액:parseM(g('수주액')),가능성:normProb(String(g('구분')||'').trim()),예정:mon(g('착공')),예비소장:String(g('예비')||'').trim(),영업현황:String(g('영업')||'').trim()})}
+    if(!out.length){alert('읽어온 행이 없습니다');return}
+    if(!confirm(out.length+'건을 읽었습니다. 현재 수주목표 '+orders(d).filter(r=>r.현장명||r.건설사).length+'건을 모두 지우고 이 내용으로 바꿉니다.'+(bad.length?'\n\n거래처 리스트에 없는 건설사('+[...new Set(bad)].join(', ')+')는 기타 탭에 들어갑니다.':'')))return;
+    d.수주목표=out; save(team); setSub('builder',cl[0]||'기타')};
+  inp.click()}
 function renderOrders(d){
   const all=orders(d); const cl=clients(d); const isOther=r=>!cl.includes(r.건설사);
   let cur=subtab.builder; if(cur!=='기타'&&!cl.includes(cur))cur=cl[0]||'기타';
@@ -583,7 +617,7 @@ function renderOrders(d){
   rows.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); for(const c of cols)r.append(inputCell(d,row,c.k==='건설사'?{...c,dl:0}:c,{after:c.num?render:null})); r.append(delBtn(all,all.indexOf(row))); body.append(r)});
   {const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:2},'합계'));for(const c of cols.slice(1)){if(c.k==='목표수주액'){const t=moneyCell(tg(rows));t.title='구분이 목표인 건의 합계';sr.append(t)}else sr.append(el('td'))}sr.append(el('td'));body.append(sr)}
   tb.append(body); right.append(el('div',{class:'nowrap'},tb));
-  if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가')));
+  if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가'),el('span',{style:'flex:1'}),el('button',{class:'btn',onclick:()=>xlsxTemplate(d)},'엑셀 양식 받기'),el('button',{class:'btn',onclick:()=>xlsxUpload(d)},'엑셀 올리기')));
   const lc=el('div',{class:'sheet'},left), rc=el('div',{class:'sheet'},right);
   box.append(el('div',{class:'split'},lc,rc));
   const w=waitPM(d); const noPM=all.filter(r=>(r.현장명||r.건설사)&&!r.예비소장).length;
@@ -794,7 +828,8 @@ function renderAll(){
   const b1=el('tbody');
   for(const [id,n,d] of list){const td=el('td');if(readonly){td.className='ro';td.textContent=d.review||''}else td.append(el('textarea',{rows:1,oninput:e=>{d.review=e.target.value;save(id)}},d.review||''));
     const dc=roCell(doneCnt(d)+' / '+CHECK_PAGES.length,'c'); if(doneCnt(d)<CHECK_PAGES.length)dc.classList.add('caution');
-    b1.append(el('tr',null,roCell(n,'c'),roCell(d.pm||'','c'),roCell(d.status||STATUS[0],'c'),dc,roCell(missing(d).join(', '),'muted'),roCell(fmtTime(d.updatedAt),'c'),td))}
+    const pmTd=el('td');if(readonly){pmTd.className='ro c';pmTd.textContent=d.pm||''}else pmTd.append(el('input',{value:d.pm||'',oninput:e=>{d.pm=e.target.value;save(id)}}));
+    b1.append(el('tr',null,roCell(n,'c'),pmTd,roCell(d.status||STATUS[0],'c'),dc,roCell(missing(d).join(', '),'muted'),roCell(fmtTime(d.updatedAt),'c'),td))}
   t1.append(b1); s1.append(el('div',{class:'wrap'},t1));
   if(!readonly){const bx=el('div',{class:'foot',style:'flex-direction:column;align-items:stretch;gap:6px'});
     bx.append(el('span',null,'2026 수주·매출 일괄 입력 (억원) — 한 줄에 한 팀: 팀, 수주목표, 당초, 변경, 매출목표, 매출실적'));
