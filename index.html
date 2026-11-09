@@ -72,7 +72,16 @@ td.st input{background:var(--panel)}
 .split{gap:12px;margin-bottom:24px}
 .split>.sheet{margin:0}
 .topcard .sheethead{align-items:center}
-.kvs{display:flex;flex-wrap:wrap;gap:4px 18px;margin-left:8px}
+.kvt{min-width:0;margin-left:14px;border-collapse:separate;font-size:12.5px}
+.kvt th{position:static;padding:3px 10px;font-size:11.5px;border-top:1px solid var(--line)}
+.kvt thead tr:first-child th{border-left:1px solid var(--line)}
+.kvt th.g{text-align:center;font-weight:600}
+.kvt th.g.hi,.kvt td.hi{color:var(--accent)}
+.kvt td{padding:4px 10px;min-width:96px;border-left:1px solid var(--line);white-space:nowrap}
+.kvt td:first-child,.kvt th:first-child{border-left:1px solid var(--line)}
+.kvt td.b{font-weight:700}
+.kvt th.sep,.kvt td.sep{border-right:2px solid var(--line)}
+.kvt td small{display:none}
 .kv .l{font-size:11px;color:var(--muted)}
 .kv .v{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .kv.hi .v{color:var(--accent)}
@@ -377,7 +386,12 @@ function renderOrders(d){
   const P=d.실적2026||(d.실적2026={}); const act=num(P.수주실적당초)+num(P.수주실적변경); const t27=tgt(all);
   const kv=(l,v,cls)=>el('div',{class:'kv'+(cls?' '+cls:'')},el('div',{class:'l'},l),el('div',{class:'v'},v));
   const top=el('div',{class:'sheet topcard'},el('div',{class:'sheethead'},el('h2',null,'수주목표'),el('span',{class:'note'},teamName(team)+' · 단위: '+unitLabel()),
-    el('div',{class:'kvs'},kv('2026 목표',fmtM(P.수주목표)),kv('2026 당초',fmtM(P.수주실적당초)),kv('2026 변경',fmtM(P.수주실적변경)),kv('2026 합계',fmtM(act)),kv('달성률',pct(act,num(P.수주목표))),kv('2027 목표',fmtM(t27),'hi'),kv('목표건',fmtM(tg(all))),kv('전년 대비',act?((t27/act-1)*100).toFixed(1)+'%':''))));
+    (()=>{const t=el('table',{class:'kvt'});
+      t.append(el('thead',null,el('tr',null,el('th',{colspan:5,class:'g'},'2026년 수주'),el('th',{colspan:3,class:'g hi'},'2027년 계획')),
+        el('tr',null,...['목표','당초','변경','합계','달성률','목표','목표건','전년 대비'].map((h,i)=>el('th',{class:i===4?'sep':i===7?'':''},h)))));
+      const v=(x,c)=>el('td',{class:'ro num'+(c?' '+c:'')},x);
+      t.append(el('tbody',null,el('tr',null,v(fmtM(P.수주목표)),v(fmtM(P.수주실적당초)),v(fmtM(P.수주실적변경)),v(fmtM(act),'b'),v(pct(act,num(P.수주목표)),'sep'),v(fmtM(t27),'b hi'),v(fmtM(tg(all))),v(act?((t27/act-1)*100).toFixed(1)+'%':''))));
+      return t})()));
   const box=el('div',{class:'cards'},top);
   // 왼쪽: 건설사 카드(선택 탭)
   const left=el('div',{class:'lcard'});
