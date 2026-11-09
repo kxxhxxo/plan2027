@@ -206,7 +206,7 @@ async function flush(id){
     const d=docs[id]; const now=snapshot(d); const prev=lastSaved[id]||{};
     for(const sec of SECTIONS){ if(!writable(sec)||now[sec]===prev[sec])continue; await post({action:'save',team:id,section:sec,value:JSON.parse(now[sec])}); prev[sec]=now[sec]; }
     lastSaved[id]=prev; setStatus('저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
-  }catch(e){ setStatus(e.message==='auth'?'로그인이 만료됨 — 다시 로그인':'저장 실패 — 잠시 후 다시 시도'); }
+  }catch(e){ setStatus(e.message==='auth'?'로그인이 만료됨 — 다시 로그인':'저장 실패: '+(e.message||'')); }
   inflight[id]=false; if(pending[id])flush(id);
 }
 async function load(){
