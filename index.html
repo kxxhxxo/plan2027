@@ -412,7 +412,7 @@ async function load(){
   return j;
 }
 function assemble(sections){ const d={}; for(const sec in sections){const v=sections[sec].value; if(sec==='meta'){const m=Object.assign({},v||{});const k=m.실적2026;delete m.실적2026;Object.assign(d,m);if(k&&!d.실적2026)d.실적2026=k} else if(sec==='kpi'){if(v&&Object.keys(v).length)d.실적2026=v} else d[sec]=v} return d }
-async function boot(j){
+async function boot(j){ RC={};
   const role=j.role; const myTeam=j.team; ROLE=role;
   TEAMS=role==='admin'?ALL_TEAMS:ALL_TEAMS.filter(x=>x[0]===myTeam);
   docs={}; lastSaved={};
@@ -429,10 +429,11 @@ async function boot(j){
 const koKey=v=>String(v||'').replace(/㈜|\(주\)/g,'').trim();
 const ko=(a,b)=>koKey(a).localeCompare(koKey(b),'ko');
 const koSort=(arr,...fs)=>{arr.sort((x,y)=>{for(const f of fs){const c=ko(f(x),f(y));if(c)return c}return 0});return arr};
-const capOf=(d,name)=>{let m=-1;for(const r of (d.거래처||[]))if(koKey(r.건설사)===koKey(name)){const v=num(r.시평액);if(v>m)m=v}return m};
+let RC={}; // 한 번 그리는 동안만 쓰는 계산 캐시 (render() 시작 때 비움)
+const capOf=(d,name)=>{const ck=(d.team||'')+'|'+name;const c=RC.cap||(RC.cap={});if(ck in c)return c[ck];let m=-1;const k=koKey(name);for(const r of (d.거래처||[]))if(koKey(r.건설사)===k){const v=num(r.시평액);if(v>m)m=v}return c[ck]=m};
 const bcmp=d=>(a,b)=>{const x=capOf(d,a),y=capOf(d,b);if(x!==y)return y-x;return ko(a,b)};
 const bsort=(d,arr,bf,sf)=>{const c=bcmp(d);arr.sort((x,y)=>c(bf(x),bf(y))||ko(sf(x),sf(y)));return arr};
-const sitesAll=d=>bsort(d,d.sites||(d.sites=[]),r=>r.건설사,r=>r.현장명);
+const sitesAll=d=>{const a=d.sites||(d.sites=[]);const c=RC.sorted||(RC.sorted=new Set());if(!c.has(a)){bsort(d,a,r=>r.건설사,r=>r.현장명);c.add(a)}return a};
 const sites=d=>sitesAll(d).filter(r=>!r.done); // 2026년 준공·종료 현장(done)은 매출·손익 2026년 탭에만
 const doneSites=d=>sitesAll(d).filter(r=>r.done);
 const orders=d=>d.수주목표||(d.수주목표=[]); // 정렬은 불러올 때만 (입력 중 행이 튀지 않게)
@@ -453,7 +454,8 @@ const pickedBy=(d,field,lab)=>orders(d).find(x=>x[field]===lab);
 const roster=()=>(docs.hq&&docs.hq.소장명단)||[];
 const toYM=iso=>/^\d{4}-\d{2}/.test(iso||'')?iso.slice(0,7).replace('-','.'):(iso||'');
 const rosterSite=r=>{ // 현재 배치 현장: 불러온 팀 자료의 소장 기준, 없으면 명단에 적힌 현장(admin이 열 때 동기화됨)
-  for(const id in docs){if(id==='hq')continue;const s0=sites(docs[id]).find(x=>(x.소장||'').trim()===r.이름);if(s0)return {team:id,site:s0.현장명,준공:s0.준공예정||''}}
+  let m=RC.pm; if(!m){m=RC.pm=new Map();for(const id in docs){if(id==='hq')continue;for(const s0 of sites(docs[id])){const n=(s0.소장||'').trim();if(n&&!m.has(n))m.set(n,{team:id,site:s0.현장명,준공:s0.준공예정||''})}}}
+  const hit=m.get(r.이름); if(hit)return hit;
   return r.현장?{team:r.팀||'',site:r.현장,준공:r.준공||''}:null};
 const rosterActive=()=>roster().filter(r=>r.이름&&r.상태!=='제외');
 const rosterWait=()=>rosterActive().filter(r=>!rosterSite(r));
@@ -471,6 +473,7 @@ const clients=d=>[...new Set((d.거래처||[]).map(r=>r.건설사).filter(Boolea
 function syncTop(){document.documentElement.style.setProperty('--topH','0px')}
 window.addEventListener('resize',syncTop);
 function render(){
+  RC={};
   $('#teamTabs').replaceChildren(...TEAMS.map(([id,n])=>el('button',{class:'tab team'+(id===team?' on':''),onclick:()=>{team=id;try{localStorage.setItem('bp.team',id)}catch(e){};render()}},n)));
   const st=$('#sheetTabs');
   if(team==='all')st.replaceChildren(el('div',{class:'nav-h'},'대표 검토'),el('button',{class:'sub-i on'},'전사 취합'));
