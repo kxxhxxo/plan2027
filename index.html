@@ -490,13 +490,13 @@ function teamBar(d){
 const rate=(a,b,inv)=>{if(!b)return '';const v=a/b*100;const good=inv?v<=100:v>=100;return el('span',{class:'rb '+(good?'good':'bad')},v.toFixed(1)+'%')};
 const formT=()=>el('table',{class:'form'},el('colgroup',null,el('col',{style:'width:150px'}),el('col')));
 function kvTable(groups){ // groups: [[title, items, hi]] · item = [label,value,cls] 또는 소그룹 [subtitle,[items],cls]
-  const t=el('table',{class:'kvt'}); const h1=el('tr'),h2=el('tr'),h3=el('tr'),vr=el('tr'); let hasSub=false;
+  const t=el('table',{class:'kvt'}); const h1=el('tr'),h2=el('tr'),h3=el('tr'),vr=el('tr'); const hasSub=groups.some(g=>g[1].some(it=>Array.isArray(it[1])));
   const flat=g=>g[1].flatMap(it=>Array.isArray(it[1])?it[1]:[it]);
   groups.forEach((g,gi)=>{h1.append(el('th',{colspan:flat(g).length,class:'g'+(g[2]?' hi':'')},g[0]));
     g[1].forEach((it,i)=>{const lastG=i===g[1].length-1&&gi<groups.length-1;
-      if(Array.isArray(it[1])){hasSub=true;const sc=it[2]||'';h2.append(el('th',{colspan:it[1].length,class:'sg '+sc+(lastG?' sep':'')},it[0]));
+      if(Array.isArray(it[1])){const sc=it[2]||'';h2.append(el('th',{colspan:it[1].length,class:'sg '+sc+(lastG?' sep':'')},it[0]));
         it[1].forEach((x,k)=>{const last=lastG&&k===it[1].length-1;h3.append(el('th',{class:sc+(last?' sep':'')},x[0]));vr.append(el('td',{class:'ro num '+sc+(x[2]?' '+x[2]:'')+(last?' sep':'')},x[1]))})}
-      else{h2.append(el('th',{rowspan:2,class:'rs'+(lastG?' sep':'')},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+(lastG?' sep':'')},it[1]))}})});
+      else{h2.append(el('th',hasSub?{rowspan:2,class:'rs'+(lastG?' sep':'')}:{class:lastG?'sep':''},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+(lastG?' sep':'')},it[1]))}})});
   const th=el('thead',null,h1,h2); if(hasSub)th.append(h3); t.append(th,el('tbody',null,vr)); return t}
 function topCard(title,note,kv){ return el('div',{class:'sheet topcard'},el('div',{class:'sheethead'},el('div',{class:'titlebox'},el('h2',null,title),el('span',{class:'note'},note)),kv)) }
 function fitTable(cols,withNo,withDel){ const tb=el('table',{class:'fit'}); const tr=el('tr'); if(withNo)tr.append(el('th',{style:'width:34px'},'No.'));
@@ -649,14 +649,18 @@ function renderOrders(d){
   return box}
 // 일반 목록
 function renderList(d,s){
-  const arr=d[sheet]||(d[sheet]=[]); if(sheet==='거래처')arr.sort((x,y)=>bcmp(d)(x.건설사,y.건설사)||ko(x.담당부서,y.담당부서)||ko(x.담당자명,y.담당자명));
-  const box=el('div',{class:'sheet'},head(s.t,teamName(team),readonly?[]:[el('button',{class:'btn',onclick:()=>{arr.push(s.blank());save(team);render()}},'+ 행 추가')]));
-  const tb=el('table'); const tr=el('tr',null,el('th',{style:'width:40px'},'No.'));
-  for(const c of s.cols)tr.append(el('th',{style:'min-width:'+c.w+'px'},c.l)); tr.append(el('th',{style:'width:32px'},''));
-  tb.append(el('thead',null,tr)); const body=el('tbody');
+  const arr=d[sheet]||(d[sheet]=[]);
+  const filled=arr.filter(r=>Object.values(r).some(v=>v)).length;
+  const kv=sheet==='소장영입'?kvTable([['영입 대상',[['인원',String(filled),'hero'],['영입 시기 확정',String(arr.filter(r=>r.이름&&r.영입시기).length||''),'sm']]]])
+    :kvTable([['신규 거래처',[['건설사',String(filled),'hero'],['등록 필요',String(arr.filter(r=>r.건설사&&!/등록/.test(r.등록현황||'')).length||''),'sm']]]]);
+  const box=el('div',{class:'cards'},topCard(s.t,teamName(team),kv));
+  const card=el('div',{class:'sheet'});
+  const cols=s.cols.map(c=>({...c,flex:c.k==='자격증'||c.k==='특장점'||c.k==='지원필요'}));
+  const tb=fitTable(cols,true,true); const body=el('tbody');
   arr.forEach((row,i)=>{const r=el('tr',null,roCell(i+1,'c muted')); for(const c of s.cols)r.append(inputCell(d,row,c,{after:(c.k==='이름'&&sheet==='소장영입')?render:null})); r.append(delBtn(arr,i)); body.append(r)});
-  tb.append(body); box.append(el('div',{class:'wrap'},tb));
-  return box}
+  tb.append(body); card.append(el('div',{class:'nowrap'},tb));
+  if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push(s.blank());save(team);render()}},'+ 행 추가')));
+  box.append(card); return box}
 // 인력 — 현장 구성 (현장 마스터)
 function renderSites(d){
   const arr=sites(d); const admin=ROLE==='admin';
