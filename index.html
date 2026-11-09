@@ -159,6 +159,7 @@ table.fit td small{display:none}
 .wrap{overflow-x:auto}
 table.ghd th.g{height:24px;font-weight:700;color:var(--ink);background:var(--surface-2);border-bottom:1px solid var(--line)}
 table.ghd thead tr:nth-child(2) th{top:24px}
+table.ghd th.rs{height:52px;top:0}
 table.ghd td.gsep,table.ghd th.gsep{border-left:1px solid var(--line-2)}
 table.ghd th.ed{background:var(--warn-bg);color:var(--warn-ink)}
 tr.newrow td{background:var(--accent-soft)}
@@ -580,7 +581,7 @@ function renderSales(d){
   const card=el('div',{class:'sheet'});
   card.append(subtabs(YEARS.map(v=>[v,v+'년']),y,v=>setSub('year',v)));
   const tb=el('table',{class:'fit ghd'}); const h1=el('tr'),h2=el('tr'),cg=el('colgroup');
-  groups.forEach(([g,cs],gi)=>{h1.append(el('th',{colspan:cs.length,class:'g'+(g?' gsep':'')},g));cs.forEach(([l,w],ci)=>{cg.append(el('col',{style:w?'width:'+w+'px':''}));const edc=ed&&((g==='기성'&&ci===1)||(g==='투입'&&ci>=1&&ci<=3));h2.append(el('th',{class:(ci===0&&g?'gsep':'')+(edc?' ed':'')},l))})});
+  groups.forEach(([g,cs],gi)=>{if(g)h1.append(el('th',{colspan:cs.length,class:'g gsep'},g));cs.forEach(([l,w],ci)=>{cg.append(el('col',{style:w?'width:'+w+'px':''}));const edc=ed&&((g==='기성'&&ci===1)||(g==='투입'&&ci>=1&&ci<=3));if(!g)h1.append(el('th',{rowspan:2,class:'rs'},l));else h2.append(el('th',{class:(ci===0?'gsep':'')+(edc?' ed':'')},l))})});
   tb.append(cg);
   tb.append(el('thead',null,h1,h2)); const body=el('tbody');
   const gl=td=>{td.classList.add('gsep');return td};
