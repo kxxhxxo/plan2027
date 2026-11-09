@@ -115,29 +115,27 @@ button{cursor:pointer}
 .kvt{width:auto;min-width:0;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:11.5px}
 .kvt th{position:static;height:26px;padding:0 12px;font-size:11px;color:var(--ink-2);font-weight:600;background:var(--surface-2);border-bottom:1px solid var(--line);border-right:1px solid var(--line-3);text-align:center;white-space:nowrap}
 .kvt th.g{text-align:left;font-weight:700;color:var(--ink);background:var(--surface);border-bottom:1px solid var(--line);height:30px;font-size:12px}
-.kvt th.g.hi{color:var(--accent-ink);background:var(--accent-soft)}
+.kvt th.g.hi{color:var(--accent-ink)}
 .kvt td{height:34px;padding:0 12px;min-width:128px;width:128px;border-right:1px solid var(--line-3);white-space:nowrap;font-size:14px;text-align:right;background:var(--surface)}
 .kvt tr>*:last-child{border-right:0}
 .kvt th.sep,.kvt td.sep{border-right:1px solid var(--line-2)}
 .kvt td.b{font-weight:700}
 .kvt td.hi{color:var(--accent-ink)}
-.kvt td.bad{color:var(--danger)}
-.kvt td.caution{color:var(--warn-ink)}
+.kvt .sgs{border-left:2px solid var(--line-2)!important}
+.kvt .gs{border-left:3px solid var(--line-strong,#8b96a8)!important}
+.kvt td.bad{color:var(--danger);background:var(--surface)!important;font-weight:700}
+.kvt td.caution{color:var(--warn-ink);background:var(--surface)!important}
 .kvt td small{display:none}
 .kvt td.dim{color:var(--ink-3);font-weight:400}
 .kvt th.sg{height:24px;font-weight:700;color:var(--ink);background:var(--surface);border-bottom:1px solid var(--line)}
+.kvt th.lb{background:var(--surface-2)}
 .kvt th.rs{height:50px}
-.kvt .tg{background:var(--surface-2)!important}
 .kvt td.tg{color:var(--ink-2)}
-.kvt th.sg.tg{color:var(--ink-3)}
-.kvt .ta{background:var(--surface)!important}
-.kvt .tr{background:#F3F6FB!important}
-.kvt th.sg.tr{color:var(--st-conf)}
-.kvt td.hero.hi{background:var(--accent-soft)!important}
-:root[data-theme="dark"] .kvt .tr{background:#1d2433!important}
+.kvt td.hero.hi{color:var(--accent-ink)}
+
 .kvt td.sm{color:var(--ink-2)}
 .kvt td.hero{font-weight:700}
-.kvt td.hero.hi{color:var(--accent-ink);background:var(--accent-soft)}
+.kvt td.hero.hi{color:var(--accent-ink);background:var(--surface)}
 .rb{display:inline-block;padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px}
 .rb.good{background:var(--st-done-bg);color:var(--st-done)}
 .rb.bad{background:var(--danger-bg);color:var(--danger)}
@@ -504,11 +502,11 @@ const formT=()=>el('table',{class:'form'},el('colgroup',null,el('col',{style:'wi
 function kvTable(groups){ // groups: [[title, items, hi]] · item = [label,value,cls] 또는 소그룹 [subtitle,[items],cls]
   const t=el('table',{class:'kvt'}); const h1=el('tr'),h2=el('tr'),h3=el('tr'),vr=el('tr'); const hasSub=groups.some(g=>g[1].some(it=>Array.isArray(it[1])));
   const flat=g=>g[1].flatMap(it=>Array.isArray(it[1])?it[1]:[it]);
-  groups.forEach((g,gi)=>{h1.append(el('th',{colspan:flat(g).length,class:'g'+(g[2]?' hi':'')},g[0]));
-    g[1].forEach((it,i)=>{const lastG=i===g[1].length-1&&gi<groups.length-1;
-      if(Array.isArray(it[1])){const sc=it[2]||'';h2.append(el('th',{colspan:it[1].length,class:'sg '+sc+(lastG?' sep':'')},it[0]));
-        it[1].forEach((x,k)=>{const last=lastG&&k===it[1].length-1;h3.append(el('th',{class:sc+(last?' sep':'')},x[0]));vr.append(el('td',{class:'ro num '+sc+(x[2]?' '+x[2]:'')+(last?' sep':'')},x[1]))})}
-      else{h2.append(el('th',hasSub?{rowspan:2,class:'rs'+(lastG?' sep':'')}:{class:lastG?'sep':''},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+(lastG?' sep':'')},it[1]))}})});
+  groups.forEach((g,gi)=>{const gs=gi>0?' gs':''; h1.append(el('th',{colspan:flat(g).length,class:'g'+(g[2]?' hi':'')+gs},g[0]));
+    g[1].forEach((it,i)=>{const ss=(i>0?' sgs':'')+(i===0?gs:'');
+      if(Array.isArray(it[1])){h2.append(el('th',{colspan:it[1].length,class:'sg'+ss},it[0]));
+        it[1].forEach((x,k)=>{const cs=k===0?ss:'';h3.append(el('th',{class:'lb'+cs},x[0]));vr.append(el('td',{class:'ro num'+(x[2]?' '+x[2]:'')+cs},x[1]))})}
+      else{h2.append(el('th',hasSub?{rowspan:2,class:'rs lb'+ss}:{class:'lb'+ss},it[0]));vr.append(el('td',{class:'ro num'+(it[2]?' '+it[2]:'')+ss},it[1]))}})});
   const th=el('thead',null,h1,h2); if(hasSub)th.append(h3); t.append(th,el('tbody',null,vr)); return t}
 function topCard(title,note,kv){ return el('div',{class:'sheet topcard'},el('div',{class:'sheethead'},el('div',{class:'titlebox'},el('h2',null,title),el('span',{class:'note'},note)),kv)) }
 function fitTable(cols,withNo,withDel){ const tb=el('table',{class:'fit'}); const tr=el('tr'); if(withNo)tr.append(el('th',{style:'width:34px'},'No.'));
