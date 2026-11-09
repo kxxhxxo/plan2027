@@ -453,31 +453,34 @@ function renderSites(d){
   tb.append(body); card.append(el('div',{class:'nowrap'},tb));
   if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),건설사:'',현장명:'',준공예정:'',소장:'',보조공무:'',공사부장:'',안전담당:'',품질관리자:'',계약:'',실행:'',특이사항:''});save(team);render()}},'+ 현장 추가')));
   box.append(card); return box}
-// 매출·손익 — 현장 1행 (연 단위), 신규 현장은 행 추가
+// 매출·손익 — 현장 1행 (연 단위, 연도 탭)
 const gTot=(r,y)=>r['g'+y]!==undefined&&r['g'+y]!==''?num(r['g'+y]):salesTotal(r,y);
+const prevCum=(r,y)=>y===2026?num(r.전회)-gTot(r,2026):y===2027?num(r.전회):num(r.전회)+gTot(r,2027); // 해당 연도 이전 기성누계 (전회 = ~2026 말)
 const newRows=d=>bsort(d,d.신규매출||(d.신규매출=[]),r=>r.건설사,r=>r.현장명);
 const salesRows=d=>[...sites(d),...newRows(d)];
 function renderSales(d){
-  const base=sites(d), extra=newRows(d), rows=[...base,...extra];
-  const S=d.매출목표||(d.매출목표={목표:{}}); S.목표=S.목표||{};
-  const P=d.실적2026||{}; const y=2027;
-  const prev=r=>num(r.전회), g27=r=>gTot(r,2027), tot=r=>prev(r)+g27(r), remain=r=>num(r.계약)-tot(r);
-  const C=rows.reduce((a,r)=>a+num(r.계약),0), PV=rows.reduce((a,r)=>a+prev(r),0), G=rows.reduce((a,r)=>a+g27(r),0), K=rows.reduce((a,r)=>a+cost(r,y),0);
+  const y=curYear(); const base=sites(d), extra=newRows(d), rows=[...base,...extra];
+  const P=d.실적2026||{};
+  const prev=r=>prevCum(r,y), gY=r=>gTot(r,y), tot=r=>prev(r)+gY(r), remain=r=>num(r.계약)-tot(r);
+  const C=rows.reduce((a,r)=>a+num(r.계약),0), PV=rows.reduce((a,r)=>a+prev(r),0), G=rows.reduce((a,r)=>a+gY(r),0), K=rows.reduce((a,r)=>a+cost(r,y),0);
+  const G27=rows.reduce((a,r)=>a+gTot(r,2027),0),K27=rows.reduce((a,r)=>a+cost(r,2027),0);
   const kv=kvTable([['2026년 매출',[['목표',fmtM(P.매출목표)],['실적·전망',fmtM(P.매출실적),'b'],['달성률',pct(num(P.매출실적),num(P.매출목표))]]],
-    ['2027년 계획',[['기성(매출)',fmtM(G),'b'],['전년 대비',num(P.매출실적)?((G/num(P.매출실적)-1)*100).toFixed(1)+'%':''],['투입',fmtM(K)],['손익',fmtM(G-K),G-K<0?'b bad':'b'],['이익률',pct(G-K,G)]],true],
-    ['누계',[['계약 합계',fmtM(C)],['총 기성누계',fmtM(PV+G)],['기성률',pct(PV+G,C)],['잔여',fmtM(C-PV-G)]]]]);
+    ['2027년 계획',[['기성(매출)',fmtM(G27),'b'],['전년 대비',num(P.매출실적)?((G27/num(P.매출실적)-1)*100).toFixed(1)+'%':''],['투입',fmtM(K27)],['손익',fmtM(G27-K27),G27-K27<0?'b bad':'b'],['이익률',pct(G27-K27,G27)]],true],
+    [y+'년 누계',[['계약 합계',fmtM(C)],['총 기성누계',fmtM(PV+G)],['기성률',pct(PV+G,C)],['잔여',fmtM(C-PV-G)]]]]);
   const box=el('div',{class:'cards'},topCard('매출·손익',teamName(team)+' · 단위: '+unitLabel(),kv));
-  const cols=[{l:'건설사',w:96},{l:'현장명',w:230,flex:1},{l:'계약금액',w:118},{l:'전회 기성누계',w:118},{l:'2027 기성',w:118},{l:'총 기성누계',w:118},{l:'기성률',w:58},{l:'잔여',w:118},{l:'자재비',w:112},{l:'급여·노무비',w:112},{l:'본사경비',w:108},{l:'투입 합계',w:118},{l:'손익',w:118},{l:'이익률',w:58}];
-  const card=el('div',{class:'sheet'}); const tb=fitTable(cols,true,true); const body=el('tbody');
+  const cols=[{l:'건설사',w:96},{l:'현장명',w:230,flex:1},{l:'계약금액',w:118},{l:'전회 기성누계',w:118},{l:y+' 기성',w:118},{l:'총 기성누계',w:118},{l:'기성률',w:66},{l:'잔여',w:118},{l:'자재비',w:112},{l:'급여·노무비',w:112},{l:'본사경비',w:106},{l:'투입 합계',w:118},{l:'손익',w:118},{l:'이익률',w:66}];
+  const card=el('div',{class:'sheet'});
+  card.append(subtabs(YEARS.map(v=>[v,v+'년']),y,v=>setSub('year',v)));
+  const tb=fitTable(cols,true,true); const body=el('tbody');
   const line=(r,i,isNew)=>{const o=Y(r,y); const tr=el('tr',null,roCell(i,'c muted'));
     if(isNew){tr.append(inputCell(d,r,{k:'건설사',dl:1}),inputCell(d,r,{k:'현장명'}),inputCell(d,r,{k:'계약',num:1},{after:render}))} else {tr.append(roCell(r.건설사,'c'),roCell(r.현장명),moneyCell(r.계약))}
-    tr.append(inputCell(d,r,{k:'전회',num:1},{after:render}));
-    if(r.g2027===undefined||r.g2027==='')r.g2027=salesTotal(r,2027)||'';
-    tr.append(inputCell(d,r,{k:'g2027',num:1},{after:render}));
+    tr.append(y===2027?inputCell(d,r,{k:'전회',num:1},{after:render}):moneyCell(prev(r)));
+    for(const yy of YEARS)if(r['g'+yy]===undefined||r['g'+yy]==='')r['g'+yy]=salesTotal(r,yy)||'';
+    tr.append(inputCell(d,r,{k:'g'+y,num:1},{after:render}));
     const t=tot(r); const kr=roCell(pct(t,num(r.계약)),'num'); if(num(r.계약)&&t>num(r.계약))kr.classList.add('caution');
     tr.append(moneyCell(t),kr,moneyCell(num(r.계약)||t?remain(r):''));
     for(const k of ['자재','노무','간접'])tr.append(inputCell(d,o,{k,num:1},{after:render}));
-    const g=g27(r),c=cost(r,y); const p=g||c?moneyCell(g-c):el('td'); if(g-c<0)p.classList.add('bad');
+    const g=gY(r),c=cost(r,y); const p=g||c?moneyCell(g-c):el('td'); if(g-c<0)p.classList.add('bad');
     tr.append(g||c?moneyCell(c):el('td'),p,roCell(pct(g-c,g),'num'));
     tr.append(isNew?delBtn(d.신규매출,d.신규매출.indexOf(r)):el('td')); return tr};
   base.forEach((r,i)=>body.append(line(r,i+1,false)));
@@ -485,8 +488,8 @@ function renderSales(d){
   const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:3},'합계'),moneyCell(C),moneyCell(PV),moneyCell(G),moneyCell(PV+G),roCell(pct(PV+G,C),'num'),moneyCell(C-PV-G));
   for(const k of ['자재','노무','간접'])sr.append(moneyCell(rows.reduce((a,r)=>a+num(Y(r,y)[k]),0))); sr.append(moneyCell(K),moneyCell(G-K),roCell(pct(G-K,G),'num'),el('td'));
   body.append(sr); tb.append(body); card.append(el('div',{class:'nowrap'},tb));
-  if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{d.신규매출.push({id:uid(),건설사:'',현장명:'',계약:'',전회:'',g2027:'',y2027:{자재:'',노무:'',간접:''}});save(team);render()}},'+ 신규 현장')));
-  card.append(el('div',{class:'foot'},el('span',null,'전회 기성누계 = 2026년 말까지 기성 · 총 기성누계 = 전회 + 2027 기성 · 기성률 = 총 기성누계 ÷ 계약금액'),el('span',null,'투입 초기값은 매출투입예정표(2027) 소계, 급여·노무비에 외주비 포함 · 손익 = 2027 기성 − 투입')));
+  if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{d.신규매출.push({id:uid(),건설사:'',현장명:'',계약:'',전회:'',g2026:'',g2027:'',g2028:'',y2026:{자재:'',노무:'',간접:''},y2027:{자재:'',노무:'',간접:''},y2028:{자재:'',노무:'',간접:''}});save(team);render()}},'+ 신규 현장')));
+  card.append(el('div',{class:'foot'},el('span',null,'전회 기성누계 = 해당 연도 이전까지 기성 (2027년 탭에서 입력, 2026·2028은 자동) · 총 기성누계 = 전회 + 해당 연도 기성 · 기성률 = 총 기성누계 ÷ 계약금액'),el('span',null,'기성·투입 초기값은 매출투입예정표 연간 합계, 급여·노무비에 외주비 포함 · 손익 = 기성 − 투입')));
   box.append(card); return box}
 // 인력 — 준공일정·소장 배치
 function renderAssign(d){
