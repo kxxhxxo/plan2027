@@ -756,13 +756,13 @@ function renderAssign(d){
 // 인력 — 현장소장 명단 (전사 공통, 수정은 admin)
 function renderRoster(d){
   const all=roster(); const hq=docs.hq; const canEdit=ROLE==='admin';
-  const rows=all.map(r=>({r,at:rosterSite(r)}));
+  const rows=all.map(r=>({r,at:rosterSite(r)})).filter(x=>canEdit||(x.at?x.at.team:x.r.팀)===team);
   const wait=rows.filter(x=>!x.at&&x.r.상태!=='제외');
   const assignedTo=r=>{for(const id in docs){if(id==='hq')continue;const o=pickedBy(docs[id],'예비소장',waitLabel(r));if(o)return {team:id,site:o.현장명,예정:o.예정}}return null};
   const planned=wait.filter(x=>assignedTo(x.r)).length; const plannedAll=rows.filter(x=>x.r.상태!=='제외'&&assignedTo(x.r)).length;
   let f=subtab.rosterF||'전체';
   const kv=kvTable([['현장소장',[['전체',String(rows.filter(x=>x.r.상태!=='제외').length),'b'],['배치',String(rows.filter(x=>x.at).length)]]],['대기',[['대기',String(wait.length),wait.length?'bad':''],['배치 예정',String(planned||'')],['미정',String((wait.length-planned)||'')]]],['준공 후 배치',[['배치 예정',String((plannedAll-planned)||'')]]]]);
-  const box=el('div',{class:'cards'},topCard('현장소장 명단','전사 현장소장 · 팀 구분 없이 준공월 기준으로 배치',kv));
+  const box=el('div',{class:'cards'},topCard('현장소장 명단',(ROLE==='admin'?'전사':teamName(team))+' 현장소장 · 예비소장 선택 시에는 전사 소장이 후보',kv));
   const card=el('div',{class:'sheet'});
   card.append(subtabs([['전체','전체',rows.length],['대기','대기',wait.length]],f,v=>setSub('rosterF',v)));
   const cols=[{l:'이름',w:90},{l:'입사일',w:112},{l:'소속 팀',w:80},{l:'현 배치 현장',w:300,flex:1},{l:'준공예정',w:118},{l:'상태',w:70},{l:'배치 예정 (수주목표)',w:260},{l:'비고',w:200}];
