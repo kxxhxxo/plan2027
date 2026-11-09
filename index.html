@@ -524,7 +524,7 @@ function prevYear(d,kind,target27){
     const tr=el('tr',null,roCell('수주액','c'),cell(kg),cell('수주실적당초'),cell('수주실적변경'),moneyCell(act),roCell(pct(act,num(P[kg])),'num'),moneyCell(target27),roCell(act?((target27/act-1)*100).toFixed(1)+'%':'','num'));
     tb.append(el('tbody',null,tr));
   } else {
-    tb.append(el('thead',null,el('tr',null,...['구분','2026 목표','2026 실적·전망','달성률','2027 목표','전년 대비'].map(h=>el('th',null,h)))));
+    tb.append(el('thead',null,el('tr',null,...['구분','2026 목표','2026 예정 기성 (전망)','달성률','2027 목표','전년 대비'].map(h=>el('th',null,h)))));
     const tr=el('tr',null,roCell('매출액','c'),cell(kg),cell(ks),roCell(pct(num(P[ks]),num(P[kg])),'num'),moneyCell(target27),roCell(num(P[ks])?((target27/num(P[ks])-1)*100).toFixed(1)+'%':'','num'));
     tb.append(el('tbody',null,tr));
   }
@@ -660,8 +660,9 @@ function renderSales(d){
   const sum=f=>rows.reduce((a,r)=>a+f(r),0);
   const C=sum(r=>num(r.계약)), PV=sum(prev), G=sum(gY), PK=sum(pk), K=sum(kY);
   const G27=sum(r=>gTot(r,2027)),K27=sum(r=>cost(r,2027));
-  const kv=kvTable([['2026년 매출',[['목표',fmtM(P.매출목표)],['실적·전망',fmtM(P.매출실적),'b'],['달성률',pct(num(P.매출실적),num(P.매출목표))]]],
-    ['2027년 계획',[['기성(매출)',fmtM(G27),'b'],['전년 대비',num(P.매출실적)?((G27/num(P.매출실적)-1)*100).toFixed(1)+'%':''],['투입',fmtM(K27)],['손익',fmtM(G27-K27),G27-K27<0?'b bad':'b'],['이익률',pct(G27-K27,G27)]],true],
+  const S26=sum(r=>gTot(r,2026));
+  const kv=kvTable([['2026년 매출',[['목표',fmtM(P.매출목표)],['예정 기성 (전망)',fmtM(S26),'b'],['달성률',pct(S26,num(P.매출목표))]]],
+    ['2027년 계획',[['기성(매출)',fmtM(G27),'b'],['전년 대비',S26?((G27/S26-1)*100).toFixed(1)+'%':''],['투입',fmtM(K27)],['손익',fmtM(G27-K27),G27-K27<0?'b bad':'b'],['이익률',pct(G27-K27,G27)]],true],
     [y+'년 누계',[['계약 합계',fmtM(C)],['기성누계',fmtM(PV+G)],['기성률',pct(PV+G,C)],['투입누계',fmtM(PK+K)],['투입률',pct(PK+K,PV+G)]]]]);
   const box=el('div',{class:'cards'},topCard('매출·손익',teamName(team)+' · 단위: '+unitLabel(),kv));
   const ed=y!==2026; // 2026년은 실적·전망 — 수정 불가
@@ -811,7 +812,7 @@ function renderAll(){
     const rs=salesRows(d); const C=rs.reduce((a,r)=>a+num(r.계약),0),PV=rs.reduce((a,r)=>a+num(r.전회),0),G=rs.reduce((a,r)=>a+gTot(r,2027),0),K=rs.reduce((a,r)=>a+cost(r,2027),0);
     return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,
       cnt:su.length,target:su.filter(r=>normProb(r.가능성)==='목표').reduce((a,r)=>a+num(r.목표수주액),0),tcnt:su.filter(r=>normProb(r.가능성)==='목표').length,orderNoPM:su.filter(r=>!r.예비소장).length,
-      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:num(P.매출실적),sales26t:num(P.매출목표),C,PV,G,K,risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
+      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:rs.reduce((a,r)=>a+gTot(r,2026),0),sales26t:num(P.매출목표),C,PV,G,K,risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
   const A=list.map(([id,n,d])=>[id,n,d,agg(d)]);
   const T=k=>A.reduce((a,x)=>a+x[3][k],0);
   const out=[];
@@ -819,7 +820,7 @@ function renderAll(){
   const GK=T('G')-T('K');
   k.append(el('div',{class:'summary'},kvTable([
     ['2027 수주',[['목표 수주액',fmtM(T('target')),'b'],['목표 건',String(T('tcnt'))],['전체 건',String(T('cnt'))],['2026 실적',fmtM(T('ord26'))]]],
-    ['2027 매출·손익',[['기성(매출)',fmtM(T('G')),'b'],['2026 실적·전망',fmtM(T('sales26'))],['투입',fmtM(T('K'))],['손익',fmtM(GK),GK<0?'b bad':'b'],['이익률',pct(GK,T('G'))]],true],
+    ['2027 매출·손익',[['기성(매출)',fmtM(T('G')),'b'],['2026 예정 기성',fmtM(T('sales26'))],['투입',fmtM(T('K'))],['손익',fmtM(GK),GK<0?'b bad':'b'],['이익률',pct(GK,T('G'))]],true],
     ['인력',[['미배치 대기 소장',T('unassigned')+' / '+T('wait'),T('unassigned')?'caution':''],['소장 미정 수주현장',T('orderNoPM')+' / '+T('cnt')]]],
     ['작성',[['확정',A.filter(x=>x[2].status==='확정').length+' / '+A.length],['제출',String(A.filter(x=>x[2].status==='제출').length)]]]])));
   out.push(k);
@@ -855,7 +856,7 @@ function renderAll(){
   b2.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(T('ord26t')),moneyCell(T('ord26a')),moneyCell(T('ord26b')),moneyCell(T('ord26')),roCell(pct(T('ord26'),T('ord26t')),'num'),moneyCell(T('target')),roCell(T('ord26')?((T('target')/T('ord26')-1)*100).toFixed(1)+'%':'','num'),roCell(T('tcnt')+' / '+T('cnt'),'num'),roCell(T('orderNoPM'),'num')));
   t2.append(b2); s2.append(el('div',{class:'wrap'},t2)); out.push(s2);
   const s3=el('div',{class:'sheet'},head('③ 매출·손익','단위: '+unitLabel()+' · 손익 = 2027 기성 − 투입'));
-  const t3=el('table'); t3.append(el('thead',null,el('tr',null,...['팀','2026 매출 목표','2026 실적·전망','달성률','2027 기성','전년 대비','2027 투입','손익','이익률','계약 합계','총 기성누계','기성률'].map(h=>el('th',null,h)))));
+  const t3=el('table'); t3.append(el('thead',null,el('tr',null,...['팀','2026 매출 목표','2026 예정 기성 (전망)','달성률','2027 기성','전년 대비','2027 투입','손익','이익률','계약 합계','총 기성누계','기성률'].map(h=>el('th',null,h)))));
   const b3=el('tbody');
   const yrow=(lbl,a,sum)=>{const tr=el('tr',sum?{class:'sum'}:null,roCell(lbl,'c'),moneyCell(a.sales26t),moneyCell(a.sales26),roCell(pct(a.sales26,a.sales26t),'num'),moneyCell(a.G),roCell(a.sales26?((a.G/a.sales26-1)*100).toFixed(1)+'%':'','num'),moneyCell(a.K));const p=moneyCell(a.G-a.K);if(a.G-a.K<0)p.classList.add('bad');tr.append(p,roCell(pct(a.G-a.K,a.G),'num'),moneyCell(a.C),moneyCell(a.PV+a.G),roCell(pct(a.PV+a.G,a.C),'num'));return tr};
   for(const [id,n,d,a] of A)b3.append(yrow(n,a,false));
