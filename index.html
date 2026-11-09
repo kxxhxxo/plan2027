@@ -283,6 +283,7 @@ const salesTotal=(r,y)=>monthsOf(r,y).reduce((a,v)=>a+num(v),0);
 const Y=(r,y)=>r['y'+y]||(r['y'+y]={자재:'',노무:'',간접:''});
 const cost=(r,y)=>{const o=Y(r,y);return num(o.자재)+num(o.노무)+num(o.간접)};
 const orderYear=r=>Math.floor(ym(r.예정)/100);
+const isFull=r=>!!(r.현장명&&num(r.목표수주액)&&normProb(r.가능성)&&r.예정);
 const orderRows=(d,y)=>orders(d).filter(r=>(r.현장명||r.건설사)&&orderYear(r)&&orderYear(r)<=y);
 const allSalesRows=(d,y)=>[...sites(d),...orderRows(d,y)];
 const pmOf=(d,r)=>{const s=r.sid&&siteById(d,r.sid);return s?s.소장:(r.소장||'')};
@@ -399,8 +400,8 @@ function renderOrders(d){
   const lb=el('tbody');
   const names=[...cl,'기타'];
   for(const c of names){const rs=rowsOf(c); const tr=el('tr',{class:'pick'+(c===cur?' on':''),onclick:()=>setSub('builder',c)});
-    tr.append(roCell(c,'bname'),moneyCell(tg(rs)||''),roCell(rs.length||'','num')); lb.append(tr)}
-  lb.append(el('tr',{class:'sum'},roCell('합계','bname'),moneyCell(tg(all)),roCell(all.length,'num')));
+    tr.append(roCell(c,'bname'),moneyCell(tg(rs)||''),roCell(rs.filter(isFull).length||'','num')); lb.append(tr)}
+  lb.append(el('tr',{class:'sum'},roCell('합계','bname'),moneyCell(tg(all)),roCell(all.filter(isFull).length,'num')));
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
   // 오른쪽: 선택 건설사 입력
   const right=el('div',{class:'rcard'});
@@ -415,7 +416,7 @@ function renderOrders(d){
   const lc=el('div',{class:'sheet'},left), rc=el('div',{class:'sheet'},right);
   box.append(el('div',{class:'split'},lc,rc));
   const w=waitPM(d); const noPM=all.filter(r=>(r.현장명||r.건설사)&&!r.예비소장).length;
-  rc.append(el('div',{class:'foot'},el('span',null,'구분: 목표 = 올해 타겟으로 추진하는 건, 검토 = 정보만 확보한 건 · 2027 목표와 합계는 구분이 목표인 건만 합산'),el('span',null,'예비소장은 착공 예정 이전에 준공되는 대기 소장과 영입 예정 소장만 표시 · 착공 예정을 넣으면 매출목표·손익의 해당 연도에 현장이 자동 추가'),el('span',null,'대기 소장 '+w.length+' · 배치 '+w.filter(x=>pickedBy(d,'예비소장',x.label)).length+' / 소장 미정 수주현장 '+noPM)));
+  rc.append(el('div',{class:'foot'},el('span',null,'구분: 목표 = 올해 타겟으로 추진하는 건, 검토 = 정보만 확보한 건 · 2027 목표와 합계는 구분이 목표인 건만 합산 · 건수는 현장명·수주액·구분·착공 예정이 모두 채워진 행만'),el('span',null,'예비소장은 착공 예정 이전에 준공되는 대기 소장과 영입 예정 소장만 표시 · 착공 예정을 넣으면 매출목표·손익의 해당 연도에 현장이 자동 추가'),el('span',null,'대기 소장 '+w.length+' · 배치 '+w.filter(x=>pickedBy(d,'예비소장',x.label)).length+' / 소장 미정 수주현장 '+noPM)));
   return box}
 // 일반 목록
 function renderList(d,s){
@@ -556,7 +557,7 @@ function renderIssues(d){
 // 취합 (대표 검토 화면)
 function renderAll(){
   const list=TEAMS.filter(([id])=>id!=='all').map(([id,n])=>[id,n,docs[id]]).filter(x=>x[2]);
-  const agg=d=>{const su=orders(d).filter(r=>r.현장명||r.건설사); const w=waitPM(d).filter(x=>!x.recruit); const P=d.실적2026||{};
+  const agg=d=>{const su=orders(d).filter(isFull); const w=waitPM(d).filter(x=>!x.recruit); const P=d.실적2026||{};
     const yr=y=>{const rs=allSalesRows(d,y);const gg=rs.reduce((a,r)=>a+salesTotal(r,y),0),c=rs.reduce((a,r)=>a+cost(r,y),0);return {g:gg,c,p:gg-c}};
     return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,
       cnt:su.length,target:su.filter(r=>normProb(r.가능성)==='목표').reduce((a,r)=>a+num(r.목표수주액),0),tcnt:su.filter(r=>normProb(r.가능성)==='목표').length,orderNoPM:su.filter(r=>!r.예비소장).length,
