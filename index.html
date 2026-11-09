@@ -889,7 +889,7 @@ function renderClients(d,s){
     const tb=fitTable(ccols,true,true); const body=el('tbody'); const rs=rowsOf(cur);
     rs.forEach((row,i)=>{const r=el('tr',null,roCell(i+1,'c muted'));for(const c of ccols)r.append(inputCell(d,row,c));r.append(delBtn(arr,arr.indexOf(row),()=>{if(rowsOf(cur).length===0)arr.push({건설사:cur,담당부서:'',담당자명:'',회사번호:'',HP:'',Email:'',시평액:f0.시평액,순위:f0.순위,등록상태:f0.등록상태,등록만기:f0.등록만기,비고:''})}));body.append(r)});
     tb.append(body); right.append(el('div',{class:'nowrap'},tb));
-    if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({건설사:cur,담당부서:'',담당자명:'',회사번호:'',HP:'',Email:'',시평액:f0.시평액,순위:f0.순위,등록상태:f0.등록상태,등록만기:f0.등록만기,비고:''});save(team);render()}},'+ 담당자 추가'),el('button',{class:'btn',onclick:()=>{const n=prompt?null:null;const nm=window.prompt('건설사명');if(nm){arr.push({건설사:nm.trim(),담당부서:'',담당자명:'',회사번호:'',HP:'',Email:'',시평액:'',순위:'',등록상태:'',등록만기:'',비고:''});setSub('client',nm.trim());save(team)}}},'+ 건설사 추가')))}
+    if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({건설사:cur,담당부서:'',담당자명:'',회사번호:'',HP:'',Email:'',시평액:f0.시평액,순위:f0.순위,등록상태:f0.등록상태,등록만기:f0.등록만기,비고:''});save(team);render()}},'+ 담당자 추가'),...(ROLE==='admin'?[el('button',{class:'btn',onclick:()=>{const nm=window.prompt('건설사명');if(nm){arr.push({건설사:nm.trim(),담당부서:'',담당자명:'',회사번호:'',HP:'',Email:'',시평액:'',순위:'',등록상태:'',등록만기:'',비고:''});setSub('client',nm.trim());save(team)}}},'+ 건설사 추가')]:[])))}
   function syncAttr(n,k){const v=first(n)[k];for(const r of rowsOf(n))r[k]=v;save(team)}
   box.append(el('div',{class:'split wide'},el('div',{class:'sheet'},left),el('div',{class:'sheet'},right))); return box}
 // 취합 (대표 검토 화면)
