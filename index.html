@@ -57,6 +57,9 @@ button{cursor:pointer}
 .sub-i{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:6px 10px 6px 18px;border-radius:6px;text-align:left;color:var(--ink-2);position:relative;white-space:nowrap}
 .sub-i:hover{background:var(--hover)}
 .sub-i.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.sub-i .nd{margin-left:auto;width:8px;height:8px;border-radius:50%;flex:none;border:2px solid var(--accent);box-sizing:border-box}
+.sub-i.done .nd{background:var(--ok);border-color:var(--ok)}
+.sub-i.todo{font-weight:600;color:var(--ink)}
 .sub-i.on::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--accent)}
 .side-foot{border-top:1px solid var(--line);padding:10px 14px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2);font-size:11.5px}
 .side-foot .who{font-weight:600}
@@ -470,7 +473,7 @@ function render(){
   $('#teamTabs').replaceChildren(...TEAMS.map(([id,n])=>el('button',{class:'tab team'+(id===team?' on':''),onclick:()=>{team=id;try{localStorage.setItem('bp.team',id)}catch(e){};render()}},n)));
   const st=$('#sheetTabs');
   if(team==='all')st.replaceChildren(el('div',{class:'nav-h'},'대표 검토'),el('button',{class:'sub-i on'},'전사 취합'));
-  else st.replaceChildren(...GROUPS.flatMap(([g,keys])=>[el('div',{class:'nav-h'},g),...(g==='인력'&&ROLE==='admin'?[...keys,'소장명단']:keys).map(k=>el('button',{class:'sub-i'+(k===sheet?' on':''),onclick:()=>{sheet=k;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()}},SHEETS[k].t))]));
+  else st.replaceChildren(...GROUPS.flatMap(([g,keys])=>[el('div',{class:'nav-h'},g),...(g==='인력'&&ROLE==='admin'?[...keys,'소장명단']:keys).map(k=>{const dd=docs[team];const chk=CHECK_PAGES.includes(k)&&dd;return el('button',{class:'sub-i'+(k===sheet?' on':'')+(chk?(doneOf(dd)[k]?' done':' todo'):''),onclick:()=>{sheet=k;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()}},SHEETS[k].t,chk?el('i',{class:'nd'}):null)})]));
   const who=$('#who'); if(who)who.textContent=cred?cred.id:''; const td=$('#today'); if(td)td.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'});
   const main=$('#main'); main.replaceChildren();
   if(team==='all'){readonly=false;main.append(...renderAll());return}
