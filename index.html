@@ -520,7 +520,7 @@ function prevYear(d,kind,target27){
     if(P.수주실적당초===undefined&&P.수주실적){P.수주실적당초=P.수주실적;P.수주실적변경=''}
     P.수주실적당초=P.수주실적당초??'';P.수주실적변경=P.수주실적변경??'';
     const act=num(P.수주실적당초)+num(P.수주실적변경); P.수주실적=String(act);
-    tb.append(el('thead',null,el('tr',null,...['구분','2026 목표','2026 당초','2026 변경','2026 합계','달성률','2027 목표','전년 대비'].map(h=>el('th',null,h)))));
+    tb.append(el('thead',null,el('tr',null,...['구분','2026 목표','2026 실적 (당초)','2026 실적 (변경)','2026 실적 합계','달성률','2027 목표','전년 대비'].map(h=>el('th',null,h)))));
     const tr=el('tr',null,roCell('수주액','c'),cell(kg),cell('수주실적당초'),cell('수주실적변경'),moneyCell(act),roCell(pct(act,num(P[kg])),'num'),moneyCell(target27),roCell(act?((target27/act-1)*100).toFixed(1)+'%':'','num'));
     tb.append(el('tbody',null,tr));
   } else {
@@ -597,7 +597,7 @@ function renderOrders(d){
   const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',목표수주액:'',가능성:'',예정:'',예비소장:'',영업현황:''});
   const P=d.실적2026||(d.실적2026={}); const act=num(P.수주실적당초)+num(P.수주실적변경); const t27=tg(all);
   const kv=(l,v,cls)=>el('div',{class:'kv'+(cls?' '+cls:'')},el('div',{class:'l'},l),el('div',{class:'v'},v));
-  const top=topCard('수주목표',teamName(team)+' · 단위: '+unitLabel(),kvTable([['2026년 수주',[['목표',fmtM(P.수주목표)],['당초',fmtM(P.수주실적당초)],['변경',fmtM(P.수주실적변경)],['합계',fmtM(act),'b'],['달성률',pct(act,num(P.수주목표))]]],['2027년 계획',[['목표',fmtM(t27),'b hi'],['전년 대비',act?((t27/act-1)*100).toFixed(1)+'%':'']],true]]));
+  const top=topCard('수주목표',teamName(team)+' · 단위: '+unitLabel(),kvTable([['2026년 수주',[['목표',fmtM(P.수주목표)],['실적 (당초)',fmtM(P.수주실적당초)],['실적 (변경)',fmtM(P.수주실적변경)],['실적 합계',fmtM(act),'b'],['달성률 (실적÷목표)',pct(act,num(P.수주목표))]]],['2027년 계획',[['목표',fmtM(t27),'b hi'],['전년 대비',act?((t27/act-1)*100).toFixed(1)+'%':'']],true]]));
   const box=el('div',{class:'cards'},top);
   // 왼쪽: 건설사 카드(선택 탭)
   const left=el('div',{class:'lcard'});
@@ -849,7 +849,7 @@ function renderAll(){
     bx.append(ta2,el('div',{class:'row'},btn2,msg2)); s1.append(bx)}
   out.push(s1);
   const s2=el('div',{class:'sheet'},head('② 수주','단위: '+unitLabel()));
-  const t2=el('table'); t2.append(el('thead',null,el('tr',null,...['팀','2026 목표','2026 당초','2026 변경','2026 합계','달성률','2027 목표 수주액','전년 대비','건수 (목표/전체)','소장 미정'].map(h=>el('th',null,h)))));
+  const t2=el('table'); t2.append(el('thead',null,el('tr',null,...['팀','2026 목표','2026 실적 (당초)','2026 실적 (변경)','2026 실적 합계','달성률','2027 목표 수주액','전년 대비','건수 (목표/전체)','소장 미정'].map(h=>el('th',null,h)))));
   const b2=el('tbody');
   for(const [id,n,d,a] of A)b2.append(el('tr',null,roCell(n,'c'),moneyCell(a.ord26t),moneyCell(a.ord26a),moneyCell(a.ord26b),moneyCell(a.ord26),roCell(pct(a.ord26,a.ord26t),'num'),moneyCell(a.target),roCell(a.ord26?((a.target/a.ord26-1)*100).toFixed(1)+'%':'','num'),roCell(a.cnt?a.tcnt+' / '+a.cnt:'','num'),roCell(a.orderNoPM||'','num')));
   b2.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(T('ord26t')),moneyCell(T('ord26a')),moneyCell(T('ord26b')),moneyCell(T('ord26')),roCell(pct(T('ord26'),T('ord26t')),'num'),moneyCell(T('target')),roCell(T('ord26')?((T('target')/T('ord26')-1)*100).toFixed(1)+'%':'','num'),roCell(T('tcnt')+' / '+T('cnt'),'num'),roCell(T('orderNoPM'),'num')));
