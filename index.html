@@ -270,6 +270,13 @@ textarea.rvin{width:100%;border:1px solid var(--line-2);border-radius:6px;paddin
 .btn.chk.on{background:var(--st-done-bg);border-color:#9fd3b0;color:var(--st-done)}
 .fn.ok{border-color:#9fd3b0}
 .fn .okm{font-style:normal;color:var(--ok);margin-left:6px;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(20,24,32,.45);z-index:30;display:flex;align-items:center;justify-content:center;padding:24px}
+.mbox{background:var(--surface);border-radius:10px;width:min(1100px,96vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.mbox .sheethead{display:flex;flex-wrap:nowrap;align-items:center;gap:12px}
+.mscroll{overflow:auto;padding:0 0 6px}
+.mscroll th{top:0}
+td.link{cursor:pointer;color:var(--accent-ink);text-decoration:underline dotted}
+td.link:hover{background:var(--accent-soft)}
 /* login */
 #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20}
 .loginbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px 28px;width:min(360px,92vw);display:flex;flex-direction:column;gap:6px}
@@ -629,12 +636,17 @@ function renderOrders(d){
   // 왼쪽: 건설사 카드(선택 탭)
   const left=el('div',{class:'lcard'});
   const B26=(d.실적2026||{}).건설사||{}; const nk=v=>koKey(v).replace(/\s|주식회사/g,'');
-  const b26=c=>{if(c==='기타'){let t=0;for(const k in B26){if(k==='기타'||!cl.some(x=>nk(x)===nk(k)))t+=num(B26[k].당초)+num(B26[k].변경)}return t}const k=Object.keys(B26).find(k=>nk(k)===nk(c));return k?num(B26[k].당초)+num(B26[k].변경):0};
+  const keysOf=c=>c==='기타'?Object.keys(B26).filter(k=>k==='기타'||!cl.some(x=>nk(x)===nk(k))):Object.keys(B26).filter(k=>nk(k)===nk(c));
+  const b26=c=>keysOf(c).reduce((t,k)=>t+num(B26[k].당초)+num(B26[k].변경),0);
+  const list26=c=>keysOf(c).flatMap(k=>B26[k].목록||[]);
+  const showList=c=>{const rows=list26(c);if(!rows.length)return;const ov=el('div',{class:'modal',onclick:e=>{if(e.target===ov)ov.remove()}});const bx=el('div',{class:'mbox'});bx.append(el('div',{class:'sheethead'},el('h2',null,c+' · 2026년 수주 내역'),el('span',{class:'note'},rows.length+'건 · '+fmtM(rows.reduce((a,r)=>a+r[3],0))+' · 단위: '+unitLabel()),el('button',{class:'btn',style:'margin-left:auto',onclick:()=>ov.remove()},'닫기')));
+    const t=fitTable([{l:'구분',w:56},{l:'원사업자 / 발주처',w:190},{l:'공사명',flex:1},{l:'계약일',w:96},{l:'계약금액',w:130}],true,false);const tb=el('tbody');rows.sort((a,b)=>b[3]-a[3]).forEach((r,i)=>tb.append(el('tr',null,roCell(i+1,'c muted'),roCell(r[0],'c'),roCell(r[1]),roCell(r[2]),roCell(r[4],'c'),moneyCell(r[3]))));t.append(tb);bx.append(el('div',{class:'mscroll'},t));ov.append(bx);document.body.append(ov)};
   const lt=el('table'); lt.append(el('thead',null,el('tr',null,...['건설사','2026 실적','2027 목표','건수'].map(h=>el('th',null,h)))));
   const lb=el('tbody');
   const names=[...cl,'기타'];
   for(const c of names){const rs=rowsOf(c); const tr=el('tr',{class:'pick'+(c===cur?' on':''),onclick:()=>setSub('builder',c)});
-    tr.append(roCell(c,'bname'),moneyCell(b26(c)||''),moneyCell(tg(rs)||''),roCell(rs.filter(isFull).length||'','num')); lb.append(tr)}
+    const bc=moneyCell(b26(c)||''); if(b26(c)){bc.classList.add('link');bc.title='내역 보기';bc.addEventListener('click',e=>{e.stopPropagation();showList(c)})}
+    tr.append(roCell(c,'bname'),bc,moneyCell(tg(rs)||''),roCell(rs.filter(isFull).length||'','num')); lb.append(tr)}
   {const tot=names.reduce((a,c)=>a+b26(c),0); lb.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(tot||''),moneyCell(tg(all)||''),roCell(all.filter(isFull).length||'','num')))}
   lb.append(el('tr',{class:'sum'},roCell('합계','bname'),moneyCell(tg(all)),roCell(all.filter(isFull).length,'num')));
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
