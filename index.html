@@ -164,9 +164,9 @@ const DC_STEP=['1. 도면작업','2. 실물량 산출','3. 내역서 작업','4.
 const monthsLeft=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';const n=new Date();return (d.getFullYear()-n.getFullYear())*12+(d.getMonth()-n.getMonth())};
 const GROUPS=[['영업',['수주목표','거래처','신규거래처']],['매출·손익',['매출목표','손익']],['인력',['현장구성','소장배치','소장영입']],['현장',['이슈']]];
 const ORDER_COLS=[
-   {k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:180},{k:'예상도급액',l:'예상 도급액',w:120,num:1},{k:'목표수주액',l:'목표 수주액',w:120,num:1},
-   {k:'가능성',l:'구분',w:64,sel:'prob'},{k:'기대수주액',l:'목표건 수주액',w:120,num:1,calc:r=>normProb(r.가능성)==='목표'?num(r.목표수주액):''},
-   {k:'입찰예정',l:'입찰',w:84,sel:'month'},{k:'예정',l:'착공',w:84,sel:'month'},
+   {k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:200},{k:'목표수주액',l:'수주액',w:130,num:1},
+   {k:'가능성',l:'구분',w:64,sel:'prob'},{k:'기대수주액',l:'목표건 수주액',w:130,num:1,calc:r=>normProb(r.가능성)==='목표'?num(r.목표수주액):''},
+   {k:'예정',l:'착공 예정',w:90,sel:'month'},
    {k:'예비소장',l:'예비소장',w:120,sel:'pm'},{k:'영업현황',l:'영업현황',w:120,flex:1}];
 const SHEETS={
  수주목표:{t:'수주목표',special:'orders'},
@@ -360,7 +360,7 @@ function renderOrders(d){
   const rows=rowsOf(cur);
   const A26=d.수주2026||(d.수주2026={});
   const tgt=rs=>rs.reduce((a,x)=>a+num(x.목표수주액),0), tg=rs=>rs.filter(x=>normProb(x.가능성)==='목표').reduce((a,x)=>a+num(x.목표수주액),0);
-  const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',예상도급액:'',목표수주액:'',가능성:'',입찰예정:'',예정:'',예비소장:'',영업현황:''});
+  const blank=()=>({id:uid(),건설사:cur==='기타'?'':cur,현장명:'',목표수주액:'',가능성:'',예정:'',예비소장:'',영업현황:''});
   const box=el('div',{class:'sheet'},head('수주목표',teamName(team)+' · 단위: '+unitLabel()));
   box.append(prevYear(d,'수주',tgt(all)));
   // 왼쪽: 건설사 카드(선택 탭)
@@ -382,7 +382,7 @@ function renderOrders(d){
   for(const c of cols)tr.append(el('th',{style:c.flex?'width:auto':'width:'+c.w+'px'},c.l)); tr.append(el('th',{style:'width:30px'},''));
   tb.append(el('thead',null,tr)); const body=el('tbody');
   rows.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); for(const c of cols)r.append(inputCell(d,row,c.k==='건설사'?{...c,dl:0}:c,{after:c.num?render:null})); r.append(delBtn(all,all.indexOf(row))); body.append(r)});
-  body.append(sumRow('합계',cols,rows,['예상도급액','목표수주액','기대수주액']));
+  body.append(sumRow('합계',cols,rows,['목표수주액','기대수주액']));
   tb.append(body); right.append(el('div',{class:'nowrap'},tb));
   if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가')));
   box.append(el('div',{class:'split'},left,right));
@@ -426,14 +426,14 @@ function renderSales(d,y){
   const sumRowS=label=>{const tr=el('tr',{class:'sum'});tr.append(roCell(label,'c st'));
     const tgt=el('td',{class:'st st2 num'}); if(y===2026){const P=d.실적2026||{};if(P.매출목표)S.목표[K]=P.매출목표;tgt.className+=' ro lock';tgt.textContent=fmtM(S.목표[K])} else if(readonly){tgt.className+=' ro';tgt.textContent=fmtM(S.목표[K])} else tgt.append(el('input',{type:'text',class:'num',value:fmtM(S.목표[K]),oninput:e=>{S.목표[K]=parseM(e.target.value);save(team)},onblur:()=>render()})); tr.append(tgt);
     const tc=moneyCell(total);tc.classList.add('st','st3');tr.append(tc);
-    tr.append(moneyCell(rows.reduce((a,r)=>a+num(r.계약||r.예상도급액),0)),moneyCell(rows.reduce((a,r)=>a+num(r.실행),0)));for(let j=0;j<12;j++)tr.append(moneyCell(colSum(j)));tr.append(roCell(S.목표[K]?'달성률 '+pct(total,num(S.목표[K])):''));return tr};
+    tr.append(moneyCell(rows.reduce((a,r)=>a+num(r.계약||r.목표수주액),0)),moneyCell(rows.reduce((a,r)=>a+num(r.실행),0)));for(let j=0;j<12;j++)tr.append(moneyCell(colSum(j)));tr.append(roCell(S.목표[K]?'달성률 '+pct(total,num(S.목표[K])):''));return tr};
   tb.append(el('thead',null,hdr('구분',y+' 목표금액',y+' 기성 합계'),sumRowS('매출액'),hdr('건설사','현장명',y+' 기성 합계')));
   const body=el('tbody');
   const line=(r,isOrder)=>{
     const M=monthsOf(r,y); const tr=el('tr'); const nm=roCell(r.현장명+(isOrder&&r.예정?' ('+r.예정+' 착공)':''),'st st2'); nm.style.overflow='hidden';nm.style.textOverflow='ellipsis';nm.title=r.현장명;
     tr.append(roCell(r.건설사,'c st'),nm);
     const rowTotal=el('td',{class:'ro num st st3'}); const upd=()=>{rowTotal.textContent=fmtM(salesTotal(r,y))};
-    tr.append(rowTotal,moneyCell(isOrder?r.예상도급액:r.계약),moneyCell(r.실행));
+    tr.append(rowTotal,moneyCell(isOrder?r.목표수주액:r.계약),moneyCell(r.실행));
     for(let j=0;j<12;j++){const td=el('td');const lock=readonly||(j<lockTo);if(lock){td.className='ro num'+(j<lockTo?' lock':'');td.textContent=fmtM(M[j])}else td.append(el('input',{type:'text',class:'num',value:fmtM(M[j]),oninput:e=>{M[j]=parseM(e.target.value);save(team);upd()},onblur:e=>{e.target.value=fmtM(M[j])}}));tr.append(td)}
     upd(); tr.append(inputCell(d,r,{k:isOrder?'매출비고':'비고'})); return tr};
   for(const r of base)body.append(line(r,false));
@@ -456,7 +456,7 @@ function renderProfit(d,y){
   const tb=el('table'); tb.append(el('thead',null,el('tr',null,...[['No.',40],['건설사',120],['현장명',280],['계약금액',150],['실행금액',150],[y+' 기성',150],['자재비',150],['급여·노무비',150],['본사경비',150],['투입 합계',150],['손익',150],['이익률',70]].map(([h,w])=>el('th',{style:'min-width:'+w+'px'},h)))));
   const body=el('tbody');
   const line=(r,i,isOrder)=>{const o=Y(r,y); const g=salesTotal(r,y),c=cost(r,y);
-    const tr=el('tr',null,roCell(i,'c muted'),roCell(r.건설사,'c'),roCell(r.현장명+(isOrder&&r.예정?' ('+r.예정+' 착공)':'')),moneyCell(isOrder?r.예상도급액:r.계약),moneyCell(r.실행),moneyCell(g));
+    const tr=el('tr',null,roCell(i,'c muted'),roCell(r.건설사,'c'),roCell(r.현장명+(isOrder&&r.예정?' ('+r.예정+' 착공)':'')),moneyCell(isOrder?r.목표수주액:r.계약),moneyCell(r.실행),moneyCell(g));
     for(const k of ['자재','노무','간접'])tr.append(inputCell(d,o,{k,num:1},{after:render}));
     const p=g||c?moneyCell(g-c):el('td'); if(g-c<0)p.classList.add('bad');
     tr.append(g||c?moneyCell(c):el('td'),p,roCell(pct(g-c,g),'num')); return tr};
@@ -464,7 +464,7 @@ function renderProfit(d,y){
   base.forEach((r,i)=>body.append(line(r,i+1,false)));
   if(extra.length){body.append(el('tr',{class:'sec'},el('td',{colspan:12},'수주 예정 현장 ('+extra.length+')'))); extra.forEach((r,i)=>body.append(line(r,base.length+i+1,true)))}
   const g=rows.reduce((a,r)=>a+salesTotal(r,y),0),c=rows.reduce((a,r)=>a+cost(r,y),0);
-  const sum=el('tr',{class:'sum'},roCell('합계','c'),el('td'),el('td'),moneyCell(rows.reduce((a,r)=>a+num(r.계약||r.예상도급액),0)),moneyCell(rows.reduce((a,r)=>a+num(r.실행),0)),moneyCell(g));
+  const sum=el('tr',{class:'sum'},roCell('합계','c'),el('td'),el('td'),moneyCell(rows.reduce((a,r)=>a+num(r.계약||r.목표수주액),0)),moneyCell(rows.reduce((a,r)=>a+num(r.실행),0)),moneyCell(g));
   for(const k of ['자재','노무','간접'])sum.append(moneyCell(rows.reduce((a,r)=>a+num(Y(r,y)[k]),0))); sum.append(moneyCell(c),moneyCell(g-c),roCell(pct(g-c,g),'num'));
   body.append(sum); tb.append(body); box.append(el('div',{class:'wrap'},tb));
   box.append(el('div',{class:'foot'},el('span',null,'매출투입예정표('+y+'년 기준년도) 소계 기준 · 급여·노무비에는 외주비 포함 · 손익 = 기성 − 투입 합계')));
