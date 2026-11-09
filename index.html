@@ -72,6 +72,7 @@ td.st input{background:var(--panel)}
 table.fit{table-layout:fixed;width:100%}
 table.fit td input,table.fit td select{text-overflow:ellipsis}
 table.fit td.ro{overflow:hidden;text-overflow:ellipsis}
+table.fit td small{display:none}
 .lcard table{min-width:100%}
 .lcard tr.pick{cursor:pointer}
 .lcard tr.pick:hover td{background:var(--accent-soft)}
@@ -166,7 +167,7 @@ const GROUPS=[['영업',['수주목표','거래처','신규거래처']],['매출
 const ORDER_COLS=[
    {k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:200},{k:'목표수주액',l:'수주액',w:130,num:1},
    {k:'가능성',l:'구분',w:64,sel:'prob'},{k:'기대수주액',l:'목표건 수주액',w:130,num:1,calc:r=>normProb(r.가능성)==='목표'?num(r.목표수주액):''},
-   {k:'예정',l:'착공 예정',w:90,sel:'month'},
+   {k:'예정',l:'착공 예정',w:104,sel:'month'},
    {k:'예비소장',l:'예비소장',w:120,sel:'pm'},{k:'영업현황',l:'영업현황',w:120,flex:1}];
 const SHEETS={
  수주목표:{t:'수주목표',special:'orders'},
@@ -381,7 +382,7 @@ function renderOrders(d){
   for(const c of cols)tr.append(el('th',{style:c.flex?'width:auto':'width:'+c.w+'px'},c.l)); tr.append(el('th',{style:'width:30px'},''));
   tb.append(el('thead',null,tr)); const body=el('tbody');
   rows.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); for(const c of cols)r.append(inputCell(d,row,c.k==='건설사'?{...c,dl:0}:c,{after:c.num?render:null})); r.append(delBtn(all,all.indexOf(row))); body.append(r)});
-  body.append(sumRow('합계',cols,rows,['목표수주액','기대수주액']));
+  {const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:2},'합계'));for(const c of cols.slice(1)){if(c.k==='목표수주액'||c.k==='기대수주액')sr.append(moneyCell(rows.reduce((a,x)=>a+num(c.calc?c.calc(x):x[c.k]),0)));else sr.append(el('td'))}sr.append(el('td'));body.append(sr)}
   tb.append(body); right.append(el('div',{class:'nowrap'},tb));
   if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가')));
   box.append(el('div',{class:'split'},left,right));
