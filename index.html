@@ -672,7 +672,7 @@ function renderIssues(d){
   const lb=el('tbody');
   for(const r of arr){const tr=el('tr',{class:'pick'+(r.id===cur?' on':''),onclick:()=>setSub('issueSite',r.id)});
     const gap=num(r.계약)-num(r.실행); const gc=moneyCell(r.계약||r.실행?gap:''); if(gapNeg(r))gc.classList.add('bad');
-    tr.append(roCell(r.건설사,'bname'),roCell(r.현장명),gc,roCell(inDC(r)?r.설변.계약현황:'','c'),roCell(r.이슈?'있음':'','c')); lb.append(tr)}
+    tr.append(roCell(r.건설사,'bname'),roCell(r.현장명),gc,roCell(inDC(r)?r.설변.계약현황:'','c'),roCell(r.이슈?'●':'','c')); lb.append(tr)}
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
   // right
   const right=el('div',{class:'rcard'});
