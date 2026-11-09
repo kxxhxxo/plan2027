@@ -350,7 +350,7 @@ const SHEETS={
  이슈:{t:'이슈 · 설계변경/정산',special:'issues'},
  소장영입:{t:'현장소장 발굴 및 영입 계획',list:true,cols:[
    {k:'이름',l:'이름',w:90},{k:'현재회사',l:'현재 근무회사',w:160},{k:'출생년도',l:'출생년도',w:90,sel:'year'},{k:'나이',l:'나이',w:60,calcText:r=>{const y=num(r.출생년도);return y>1900?String(new Date().getFullYear()-y+1)+'세':''}},{k:'경력',l:'경력 (년)',w:80,raw:1},{k:'자격증',l:'자격증',w:200},{k:'희망지역',l:'희망 근무지역',w:120},{k:'영입시기',l:'영입 예정 시기',w:110,sel:'month'},
-   {k:'배치현장',l:'배치 예정 현장',w:240,calcText:(r,d)=>{const a=pickedBy(d,'예비소장',recruitLabel(r));return a?a.현장명+(a.예정?' ('+a.예정+' 착공)':''):''}}],
+   ],
    blank:()=>({이름:'',현재회사:'',출생년도:'',경력:'',자격증:'',희망지역:'',영입시기:''})},
 };
 let docs={}, team='t1', sheet='수주목표', readonly=false, subtab={}, cred=null, lastSaved={};
