@@ -160,6 +160,10 @@ table.fit td small{display:none}
 table.ghd th.g{height:24px;font-weight:700;color:var(--ink);background:var(--surface-2);border-bottom:1px solid var(--line)}
 table.ghd thead tr:nth-child(2) th{top:24px}
 table.ghd td.gsep,table.ghd th.gsep{border-left:1px solid var(--line-2)}
+table.ghd th.ed{background:var(--warn-bg);color:var(--warn-ink)}
+table.ghd td.ed{background:var(--warn-bg)}
+table.ghd td.ed input{border-color:#E9C9A0;background:#fff}
+tbody tr:hover td.ed{background:var(--warn-cell)}
 table.form{width:100%;table-layout:fixed}
 table.form th{position:static;text-align:left;background:var(--surface-2);color:var(--ink-2);font-weight:600;padding:0 10px;height:30px;border-right:1px solid var(--line)}
 table.form th.g{color:var(--ink);font-weight:700;height:30px;border-top:1px solid var(--line)}
@@ -564,6 +568,7 @@ function renderSales(d){
     ['2027년 계획',[['기성(매출)',fmtM(G27),'b'],['전년 대비',num(P.매출실적)?((G27/num(P.매출실적)-1)*100).toFixed(1)+'%':''],['투입',fmtM(K27)],['손익',fmtM(G27-K27),G27-K27<0?'b bad':'b'],['이익률',pct(G27-K27,G27)]],true],
     [y+'년 누계',[['계약 합계',fmtM(C)],['기성누계',fmtM(PV+G)],['기성률',pct(PV+G,C)],['투입누계',fmtM(PK+K)],['투입률',pct(PK+K,PV+G)]]]]);
   const box=el('div',{class:'cards'},topCard('매출·손익',teamName(team)+' · 단위: '+unitLabel(),kv));
+  const ed=y!==2026; // 2026년은 실적·전망 — 수정 불가
   const W={m:UNIT==='원'?104:92,p:62};
   const groups=[['',[['No.',34],['건설사',78],['현장명',0],['계약금액',W.m]]],
     ['기성',[['전회누계',W.m],[y+' 기성',W.m],['누계',W.m],['기성률',W.p],['잔여',W.m]]],
@@ -572,20 +577,19 @@ function renderSales(d){
   const card=el('div',{class:'sheet'});
   card.append(subtabs(YEARS.map(v=>[v,v+'년']),y,v=>setSub('year',v)));
   const tb=el('table',{class:'fit ghd'}); const h1=el('tr'),h2=el('tr'),cg=el('colgroup');
-  groups.forEach(([g,cs],gi)=>{h1.append(el('th',{colspan:cs.length,class:'g'+(g?' gsep':'')},g));cs.forEach(([l,w],ci)=>{cg.append(el('col',{style:w?'width:'+w+'px':''}));h2.append(el('th',{class:ci===0&&g?'gsep':''},l))})});
+  groups.forEach(([g,cs],gi)=>{h1.append(el('th',{colspan:cs.length,class:'g'+(g?' gsep':'')},g));cs.forEach(([l,w],ci)=>{cg.append(el('col',{style:w?'width:'+w+'px':''}));const edc=ed&&((g==='기성'&&ci===1)||(g==='투입'&&ci>=1&&ci<=3));h2.append(el('th',{class:(ci===0&&g?'gsep':'')+(edc?' ed':'')},l))})});
   tb.append(cg);
   tb.append(el('thead',null,h1,h2)); const body=el('tbody');
   const gl=td=>{td.classList.add('gsep');return td};
-  const ed=y!==2026; // 2026년은 실적·전망 — 수정 불가
   const line=(r,i,isNew)=>{const o=Y(r,y); const tr=el('tr',null,roCell(i,'c muted'));
     if(isNew&&ed){tr.append(inputCell(d,r,{k:'건설사',dl:1}),inputCell(d,r,{k:'현장명'}),inputCell(d,r,{k:'계약',num:1},{after:render}))} else {tr.append(roCell(r.건설사,'c'),roCell(r.현장명),moneyCell(r.계약))}
     for(const yy of YEARS)if(r['g'+yy]===undefined||r['g'+yy]==='')r['g'+yy]=salesTotal(r,yy)||'';
-    tr.append(gl(y===2027?inputCell(d,r,{k:'전회',num:1},{after:render}):moneyCell(hasPrev(r)||y===2028?prev(r):'')));
-    tr.append(ed?inputCell(d,r,{k:'g'+y,num:1},{after:render}):moneyCell(gY(r)||''));
+    tr.append(gl(moneyCell(hasPrev(r)||y===2028?prev(r):'')));
+    {const c=ed?inputCell(d,r,{k:'g'+y,num:1},{after:render}):moneyCell(gY(r)||'');if(ed)c.classList.add('ed');tr.append(c)}
     const t=tot(r); const kr=roCell(pct(t,num(r.계약)),'num'); if(num(r.계약)&&t>num(r.계약))kr.classList.add('caution');
     tr.append(moneyCell(t),kr,moneyCell(num(r.계약)||t?num(r.계약)-t:''));
-    tr.append(gl(y===2027?inputCell(d,r,{k:'전회투입',num:1},{after:render}):moneyCell(hasPrevK(r)||y===2028?pk(r):'')));
-    for(const k of ['자재','노무','간접'])tr.append(ed?inputCell(d,o,{k,num:1},{after:render}):moneyCell(o[k]||''));
+    tr.append(gl(moneyCell(hasPrevK(r)||y===2028?pk(r):'')));
+    for(const k of ['자재','노무','간접']){const c=ed?inputCell(d,o,{k,num:1},{after:render}):moneyCell(o[k]||'');if(ed)c.classList.add('ed');tr.append(c)}
     const g=gY(r),c=kY(r),kt=ktot(r);
     tr.append(g||c?moneyCell(c):el('td'),moneyCell(kt||''),roCell(pct(kt,t),'num'));
     const p=g||c?moneyCell(g-c):el('td'); if(g-c<0)p.classList.add('bad');
