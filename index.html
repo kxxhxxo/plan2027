@@ -110,6 +110,7 @@ button{cursor:pointer}
 .stv.s1{background:var(--st-conf-bg);color:var(--st-conf)}
 .stv.s2{background:var(--st-done-bg);color:var(--st-done)}
 .btn{height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--line-2);background:var(--surface);font-weight:600;color:var(--ink);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;flex:none;font-size:11.5px}
+.btn.sm{height:22px;padding:0 8px;font-size:11px;border-radius:5px}
 .btn:hover{background:var(--hover)}
 .btn.primary{background:var(--btn);border-color:var(--btn);color:#fff}
 .btn.primary:hover{background:var(--btn-hover)}
@@ -384,7 +385,7 @@ const label=(name,m)=>name+' ('+m+')';
 const recruitLabel=r=>r.이름+' (영입'+(r.영입시기?' '+r.영입시기:'')+')';
 const uid=()=>Math.random().toString(36).slice(2,9);
 const fmtTime=iso=>{if(!iso)return '';const d=new Date(iso);return isNaN(d)?'':(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
-function setStatus(t){const st=$('#status');const lo=st.querySelector('.lo');st.textContent=t;if(lo)st.append(lo)}
+function setStatus(t){const st=$('#status');const lo=[...st.querySelectorAll('.lo')];st.textContent=t;st.append(...lo)}
 
 // ---- persistence: Apps Script, 섹션 단위 저장(바뀐 섹션만), 팀별 한 번에 하나
 const pending={}, inflight={}, timers={};
@@ -929,12 +930,13 @@ function renderAll(){
     ['작성',[['확정',A.filter(x=>x[2].status==='확정').length+' / '+A.length],['제출',String(A.filter(x=>x[2].status==='제출').length)]]]])));
   out.push(k);
   const s1=el('div',{class:'sheet'},head('① 작성 상태 · 대표 검토 의견','검토 의견은 해당 팀 화면 상단에 표시'));
-  const t1=el('table'); t1.append(el('thead',null,el('tr',null,...[['팀',60],['PM',110],['작성 상태',90],['작성 완료',90],['미완료 화면',260],['마지막 저장',100],['검토 의견',400]].map(([h,w])=>el('th',{style:'min-width:'+w+'px'},h)))));
+  const t1=el('table'); t1.append(el('thead',null,el('tr',null,...[['팀',60],['PM',110],['작성 상태',90],['작성 완료',90],['미완료 화면',260],['마지막 저장',100],['검토 의견',400],['비밀번호',90]].map(([h,w])=>el('th',{style:'min-width:'+w+'px'},h)))));
   const b1=el('tbody');
   for(const [id,n,d] of list){const td=el('td');if(readonly){td.className='ro';td.textContent=d.review||''}else td.append(el('textarea',{rows:1,oninput:e=>{d.review=e.target.value;save(id)}},d.review||''));
     const dc=roCell(doneCnt(d)+' / '+CHECK_PAGES.length,'c'); if(doneCnt(d)<CHECK_PAGES.length)dc.classList.add('caution');
     const pmTd=el('td');if(readonly){pmTd.className='ro c';pmTd.textContent=d.pm||''}else pmTd.append(el('input',{value:d.pm||'',oninput:e=>{d.pm=e.target.value;save(id)}}));
-    b1.append(el('tr',null,roCell(n,'c'),pmTd,roCell(d.status||STATUS[0],'c'),dc,roCell(missing(d).join(', '),'muted'),roCell(fmtTime(d.updatedAt),'c'),td))}
+    const pwTd=el('td',{class:'c'}); if(!readonly)pwTd.append(el('button',{class:'btn sm',onclick:async()=>{if(!confirm(n+' 비밀번호를 초기 비밀번호로 되돌릴까요?'))return;try{const r=await post({action:'resetPw',team:id});alert(n+' 초기 비밀번호: '+r.initial+'\n(다음 로그인 때 새 비밀번호를 정하게 됩니다)')}catch(x){alert('실패: '+(x.message||''))}}},'초기화'));
+    b1.append(el('tr',null,roCell(n,'c'),pmTd,roCell(d.status||STATUS[0],'c'),dc,roCell(missing(d).join(', '),'muted'),roCell(fmtTime(d.updatedAt),'c'),td,pwTd))}
   t1.append(b1); s1.append(el('div',{class:'wrap'},t1));
   if(!readonly){const bx=el('div',{class:'foot',style:'flex-direction:column;align-items:stretch;gap:6px'});
     bx.append(el('span',null,'2026 수주·매출 일괄 입력 (억원) — 한 줄에 한 팀: 팀, 수주목표, 당초, 변경, 매출목표, 매출실적'));
@@ -990,11 +992,29 @@ async function tryLogin(id,pw){
   cred={id:id.trim().toLowerCase(),pw};
   setStatus('불러오는 중');
   try{ const j=await load(); try{sessionStorage.setItem('bp.cred',JSON.stringify(cred))}catch(e){}; $('#login').hidden=true; await boot(j); if(!$('#status').textContent.startsWith('초기'))setStatus('저장됨');
-    $('#status').append(el('button',{class:'lo',onclick:()=>{cred=null;try{sessionStorage.removeItem('bp.cred')}catch(e){};showLogin()}},cred.id+' · 나가기')); }
+    $('#status').append(el('button',{class:'lo',onclick:()=>pwModal(false)},'비밀번호 변경'),el('button',{class:'lo',onclick:()=>{cred=null;try{sessionStorage.removeItem('bp.cred')}catch(e){};showLogin()}},cred.id+' · 나가기'));
+    if(!j.pwChanged)pwModal(true); }
   catch(e){ cred=null; showLogin(e.message==='auth'?'아이디 또는 비밀번호가 맞지 않습니다':'서버에 연결할 수 없습니다. 잠시 후 다시 시도') }
 }
 for(const b of document.querySelectorAll('#unit .tab')){b.classList.toggle('on',b.dataset.u===UNIT);b.addEventListener('click',()=>{UNIT=b.dataset.u;try{localStorage.setItem('bp.unit',UNIT)}catch(e){};for(const x of document.querySelectorAll('#unit .tab'))x.classList.toggle('on',x.dataset.u===UNIT);render()})}
 window.addEventListener('beforeunload',e=>{if(Object.values(pending).some(Boolean)||Object.values(inflight).some(Boolean)){e.preventDefault();e.returnValue=''}});
+function pwModal(force){
+  const ov=el('div',{class:'modal'}); const f=el('form',{class:'loginbox'});
+  const err=el('div',{class:'err'});
+  const p1=el('input',{type:'password',autocomplete:'new-password'}),p2=el('input',{type:'password',autocomplete:'new-password'});
+  f.append(el('h2',null,force?'비밀번호를 새로 정해 주세요':'비밀번호 변경'),
+    force?el('div',{style:'font-size:12.5px;color:var(--ink-3);margin:-6px 0 8px'},'처음 로그인입니다. 외우기 쉬운 비밀번호로 바꾼 뒤 사용하세요.'):null,
+    el('label',null,'새 비밀번호 (4자 이상, 공백 없이)'),p1,el('label',null,'새 비밀번호 확인'),p2,
+    el('div',{style:'display:flex;gap:8px;margin-top:10px'},el('button',{class:'btn primary',type:'submit'},'변경'),force?null:el('button',{class:'btn',type:'button',onclick:()=>ov.remove()},'취소')),err);
+  f.addEventListener('submit',async e=>{e.preventDefault();const a=p1.value,b=p2.value;
+    if(a.length<4||/\s/.test(a)){err.textContent='4자 이상, 공백 없이 입력하세요';return}
+    if(a!==b){err.textContent='두 입력이 서로 다릅니다';return}
+    if(a===cred.pw){err.textContent='지금 비밀번호와 같습니다';return}
+    err.textContent='';f.querySelector('button').disabled=true;
+    try{await post({action:'changePw',newPw:a});cred.pw=a;try{sessionStorage.setItem('bp.cred',JSON.stringify(cred))}catch(x){};ov.remove();setStatus('비밀번호 변경됨')}
+    catch(x){err.textContent='변경 실패: '+(x.message||'');f.querySelector('button').disabled=false}});
+  ov.append(f);document.body.append(ov);p1.focus();
+}
 $('#loginForm').addEventListener('submit',e=>{e.preventDefault();tryLogin($('#lid').value,$('#lpw').value)});
 (function(){ let c=null; try{c=JSON.parse(sessionStorage.getItem('bp.cred')||'null')}catch(e){} if(c&&c.id)tryLogin(c.id,c.pw); else showLogin(); })();
 })();
