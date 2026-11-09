@@ -318,10 +318,10 @@ const API='https://script.google.com/macros/s/AKfycbyNyN0wcDLsnnkl9d1DnGzDdadOWu
 const ALL_TEAMS=[['t1','1팀'],['t2','2팀'],['t3','t3'],['t4','4팀'],['t5','5팀'],['t6','6팀'],['gov','관급'],['all','취합']];
 ALL_TEAMS[2][1]='3팀';
 let TEAMS=ALL_TEAMS;
-const SECTIONS=['meta','kpi','sites','수주목표','매출목표','신규매출','소장배치','거래처','신규거래처','소장영입'];
+const SECTIONS=['meta','kpi','sites','수주목표','매출목표','신규매출','소장배치','거래처','신규거래처','소장영입','교육계획'];
 const HQ_SECTIONS=['소장명단']; const secsOf=id=>id==='hq'?HQ_SECTIONS:SECTIONS;
 const META_KEYS=['team','pm','status','updatedAt','review','done'];
-const CHECK_PAGES=['현장구성','거래처','수주목표','신규거래처','매출목표','이슈','소장영입'];
+const CHECK_PAGES=['현장구성','거래처','수주목표','신규거래처','매출목표','이슈','소장영입','교육계획'];
 const doneOf=d=>d.done||(d.done={}); const doneCnt=d=>CHECK_PAGES.filter(k=>doneOf(d)[k]).length; const missing=d=>CHECK_PAGES.filter(k=>!doneOf(d)[k]).map(k=>SHEETS[k].t);
 let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
@@ -334,7 +334,7 @@ const STATUS=['작성 중','제출','확정'];
 const DC_STATUS=['당초','1차 진행중','1차 완료','2차 진행중','2차 완료','3차 진행중','3차 완료','4차 진행중','4차 완료','정산 중','정산완료','추가공사'];
 const DC_STEP=['1. 도면작업','2. 실물량 산출','3. 내역서 작업','4. 당초 감독관 검토','5. 수정 내역서 작업','6. 수정 내역서 감독관 검토','7. PM - 감독관 금액협의','8. 상신(본사 검토)','9. 본사결재 완료','10. 변경계약 대기','11. 계약완료'];
 const monthsLeft=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';const n=new Date();return (d.getFullYear()-n.getFullYear())*12+(d.getMonth()-n.getMonth())};
-const GROUPS=[['시작',['안내']],['영업',['수주목표','거래처','신규거래처']],['매출·손익',['매출목표']],['인력',['현장구성','소장영입']],['현장',['이슈']]];
+const GROUPS=[['시작',['안내']],['영업',['수주목표','거래처','신규거래처']],['매출·손익',['매출목표']],['인력',['현장구성','소장영입','교육계획']],['현장',['이슈']]];
 const ORDER_COLS=[
    {k:'건설사',l:'건설사',w:110,dl:1},{k:'현장명',l:'현장명',w:200},{k:'목표수주액',l:'수주액',w:130,num:1},
    {k:'가능성',l:'구분',w:64,sel:'prob'},
@@ -345,6 +345,7 @@ const SHEETS={
  수주목표:{t:'수주목표',special:'orders'},
  매출목표:{t:'매출·손익',special:'sales'},
  현장구성:{t:'현장·소장 현황',special:'sites'},
+ 교육계획:{t:'교육 계획',special:'edu'},
  소장배치:{t:'준공일정·소장 배치',special:'assign'},
  소장명단:{t:'현장소장 명단',special:'roster'},
  거래처:{t:'거래처 리스트',special:'clients',cols:[
@@ -480,7 +481,7 @@ function render(){
   $('#dlClients').replaceChildren(...clients(d).map(c=>el('option',{value:c})));
   readonly=ROLE!=='admin'&&(d.status||STATUS[0])!=='작성 중';
   const s=SHEETS[sheet];
-  const R={orders:renderOrders,sales:renderSales,sites:renderSites,assign:renderAssign,issues:renderIssues,clients:renderClients,roster:renderRoster,guide:renderGuide};
+  const R={orders:renderOrders,sales:renderSales,sites:renderSites,assign:renderAssign,issues:renderIssues,clients:renderClients,roster:renderRoster,guide:renderGuide,edu:renderEdu};
   main.append(s.special?R[s.special](d,s):renderList(d,s));
   const hd=main.querySelector('.sheethead'); if(hd){const bar=teamBar(d); bar.className='bar inline'; hd.append(bar)}
   syncTop();
@@ -576,7 +577,8 @@ function renderGuide(d){
     col('② 영업 계획',
       node('orders','수주목표','건설사별 목표 현장 · 수주액 · 착공 · 예비소장','수주목표','key'),
       node('newc','신규 거래처','2027 신규 개척 건설사','신규거래처'),
-      node('recruit','소장 발굴·영입','영입 예정 소장 → 예비소장 후보','소장영입')),
+      node('recruit','소장 발굴·영입','영입 예정 소장 → 예비소장 후보','소장영입'),
+      node('edu','교육 계획','소장·공무 교육 상·하반기 주제·시기','교육계획')),
     col('③ 매출·손익 계획',
       node('sales','매출·손익 2027','현장별 기성·투입 수정 + 0행 신규 수주분','매출목표','key'),
       node('sales28','매출·손익 2028','같은 방식','매출목표'),
@@ -586,7 +588,7 @@ function renderGuide(d){
       node('review','본사 검토 · 확정','검토 의견 · 수정 열기 · 확정',null,'end')));
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('class','farrows');
   const wrap=el('div',{class:'flowwrap'},svg,flow);
-  const links=[['sites','orders'],['clients','orders'],['recruit','orders'],['orders','sales'],['sales','sales28'],['sales28','issues'],['sales','submit'],['issues','submit'],['submit','review']];
+  const links=[['sites','orders'],['clients','orders'],['edu','submit'],['recruit','orders'],['orders','sales'],['sales','sales28'],['sales28','issues'],['sales','submit'],['issues','submit'],['submit','review']];
   const draw=()=>{const W=wrap.clientWidth,H=wrap.clientHeight;if(!W)return;svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width',W);svg.setAttribute('height',H);svg.innerHTML='<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--line-2)"/></marker></defs>';
     const R=wrap.getBoundingClientRect(); const rect=id=>{const e=wrap.querySelector('[data-id="'+id+'"]');const r=e.getBoundingClientRect();return {x1:r.left-R.left,x2:r.right-R.left,y:r.top-R.top+r.height/2}};
     for(const [a,b] of links){const A=rect(a),B=rect(b);let p;if(a==='sales'&&b==='sales28'||a==='sales28'&&b==='issues'||a==='submit'&&b==='review'){const ea=wrap.querySelector('[data-id="'+a+'"]').getBoundingClientRect(),eb=wrap.querySelector('[data-id="'+b+'"]').getBoundingClientRect();const x=ea.left-R.left+28,y1=ea.bottom-R.top,y2=eb.top-R.top;p='M'+x+' '+y1+'L'+x+' '+y2}else{const mx=(A.x2+B.x1)/2;p='M'+A.x2+' '+A.y+'C'+mx+' '+A.y+' '+mx+' '+B.y+' '+B.x1+' '+B.y}
@@ -820,6 +822,26 @@ function renderRoster(d){
   tb.append(body); card.append(el('div',{class:'nowrap'},tb));
   if(canEdit)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push({id:uid(),이름:'',입사일:'',팀:'',현장:'',상태:'',비고:''});save('hq');render()}},'+ 소장 추가')));
   box.append(card); return box}
+// 인력 — 교육 계획 (소장 / 공무 · 상반기 / 하반기)
+function renderEdu(d){
+  const arr=d.교육계획||(d.교육계획=[]);
+  for(const g of ['소장','공무'])for(const h of ['상반기','하반기'])if(!arr.some(r=>r.구분===g&&r.반기===h))arr.push({id:uid(),구분:g,반기:h,예정:'',주제:'',대상:'',비고:''});
+  const filled=arr.filter(r=>r.주제).length;
+  const kv=kvTable([['교육',[['계획 건',String(filled||''),'hero'],['소장 교육',String(arr.filter(r=>r.구분==='소장'&&r.주제).length||''),'sm'],['공무 교육',String(arr.filter(r=>r.구분==='공무'&&r.주제).length||''),'sm']]]]);
+  const box=el('div',{class:'cards'},topCard('교육 계획',teamName(team)+' · 2027년',kv));
+  const monthsOf=h=>MONTHS.filter(m=>m.startsWith('2027.')&&(h==='상반기'?Number(m.slice(5))<=6:Number(m.slice(5))>=7));
+  for(const g of ['소장','공무']){
+    const rows=arr.filter(r=>r.구분===g).sort((a,b)=>(a.반기==='상반기'?0:1)-(b.반기==='상반기'?0:1)||ko(a.예정,b.예정));
+    const card=el('div',{class:'sheet'},el('div',{class:'sheethead'},el('h2',null,g+' 교육'),el('span',{class:'note'},rows.filter(r=>r.주제).length+'건')));
+    const tb=fitTable([{l:'반기',w:80},{l:'예정 년-월',w:110},{l:'교육 주제',w:400,flex:1},{l:'대상',w:160},{l:'비고',w:240}],true,true); const body=el('tbody');
+    rows.forEach((r,i)=>{const tr=el('tr',null,roCell(i+1,'c muted'),roCell(r.반기,'c'));
+      const td=el('td',{class:'ed'}); if(readonly){td.className='ro c';td.textContent=r.예정||''} else {const sel=el('select',{onchange:e=>{r.예정=e.target.value;save(team)}});sel.append(el('option',{value:''},''));for(const m of monthsOf(r.반기))sel.append(el('option',{value:m},m));sel.value=r.예정||'';td.append(sel)} tr.append(td);
+      for(const k of ['주제','대상','비고']){const c=inputCell(d,r,{k});if(k==='주제'&&!readonly)c.classList.add('ed');tr.append(c)}
+      const fixed=arr.filter(x=>x.구분===g&&x.반기===r.반기).length<=1; tr.append(fixed?el('td'):delBtn(arr,arr.indexOf(r))); body.append(tr)});
+    tb.append(body); card.append(el('div',{class:'nowrap'},tb));
+    if(!readonly)card.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),구분:g,반기:'상반기',예정:'',주제:'',대상:'',비고:''});save(team);render()}},'+ 상반기 추가'),el('button',{class:'btn',onclick:()=>{arr.push({id:uid(),구분:g,반기:'하반기',예정:'',주제:'',대상:'',비고:''});save(team);render()}},'+ 하반기 추가')));
+    box.append(card)}
+  return box}
 // 현장 — 이슈·설계변경/정산 (좌: 현장 목록, 우: 선택 현장)
 function renderIssues(d){
   const arr=sites(d); const dc=r=>r.설변||(r.설변={계약현황:'',예정금액:'',진행상황:'',예정:''});
