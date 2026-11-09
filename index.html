@@ -700,7 +700,7 @@ function renderSales(d){
   const S26=sum(r=>gTot(r,2026));
   const kv=kvTable([['2026년 매출',[['목표',[['연간 목표',fmtM(P.매출목표)]],'tg'],['실적',[['예정 기성 (전망)',fmtM(S26),'hero']],'ta'],['달성률',[['실적 ÷ 목표',rate(S26,num(P.매출목표))]],'tr']]],
     ['2027년 계획',[['매출',[['기성',fmtM(G27),'hero hi'],['전년 대비',delta(G27,S26)]],'ta'],['손익',[['투입',fmtM(K27),'sm'],['손익',fmtM(G27-K27),G27-K27<0?'hero bad':'hero'],['이익률',pct(G27-K27,G27),'sm']],'ta']],true],
-    [y+'년 누계',[['계약 합계',fmtM(C)],['기성누계',fmtM(PV+G)],['기성률',pct(PV+G,C)],['투입누계',fmtM(PK+K)],['투입률',pct(PK+K,PV+G)]]]]);
+    [y+'년 누계',[['기성',[['계약 합계',fmtM(C),'sm'],['기성누계',fmtM(PV+G),'hero'],['기성률',pct(PV+G,C),'sm']],'ta'],['투입',[['투입누계',fmtM(PK+K),'sm'],['투입률',pct(PK+K,PV+G),'sm']],'tg']]]]);
   const box=el('div',{class:'cards'},topCard('매출·손익',teamName(team)+' · 단위: '+unitLabel(),kv));
   const ed=y!==2026; // 2026년은 실적·전망 — 수정 불가
   const W={m:UNIT==='원'?104:92,p:62};
