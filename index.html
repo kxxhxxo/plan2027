@@ -154,7 +154,7 @@ const SHEETS={
  현장구성:{t:'현장 구성 현황',special:'sites'},
  소장배치:{t:'준공일정·소장/공무 배치',special:'assign'},
  거래처:{t:'거래처 리스트',list:true,cols:[
-   {k:'건설사',l:'건설사',w:160},{k:'신용',l:'신용',w:80,sel:'credit'},{k:'담당부서',l:'담당부서',w:140},{k:'담당자명',l:'담당자명',w:100},{k:'회사번호',l:'회사번호',w:120},{k:'HP',l:'H.P',w:120},
+   {k:'건설사',l:'건설사',w:160},{k:'담당부서',l:'담당부서',w:140},{k:'담당자명',l:'담당자명',w:100},{k:'회사번호',l:'회사번호',w:120},{k:'HP',l:'H.P',w:120},
    {k:'Email',l:'E-Mail',w:200},{k:'시평액',l:'시평액 (억원)',w:100,num:1,raw:1},{k:'순위',l:'순위',w:60},{k:'등록상태',l:'등록상태',w:80},{k:'등록만기',l:'등록만기',w:90},{k:'비고',l:'비고',w:140}],
    blank:()=>({건설사:'',신용:'',담당부서:'',담당자명:'',회사번호:'',HP:'',Email:'',시평액:'',순위:'',등록상태:'',등록만기:'',비고:''})},
  신규거래처:{t:'신규 거래처',list:true,cols:[
@@ -353,7 +353,7 @@ function renderList(d,s){
   tb.append(el('thead',null,tr)); const body=el('tbody');
   arr.forEach((row,i)=>{const r=el('tr',null,roCell(i+1,'c muted')); for(const c of s.cols)r.append(inputCell(d,row,c,{after:(c.k==='이름'&&sheet==='소장영입')?render:null})); r.append(delBtn(arr,i)); body.append(r)});
   tb.append(body); box.append(el('div',{class:'wrap'},tb));
-  if(sheet==='거래처')box.append(el('div',{class:'foot'},el('span',null,'신용: 재무 불안·워크아웃·법정관리 등 수주 리스크가 있는 원청사는 주의/위험으로 표시 · 여기 건설사 목록이 수주목표의 건설사 탭이 됨')));
+  if(sheet==='거래처')box.append(el('div',{class:'foot'},el('span',null,'여기 건설사 목록이 수주목표의 건설사 탭이 됨')));
   return box}
 // 인력 — 현장 구성 (현장 마스터)
 function renderSites(d){
@@ -549,12 +549,6 @@ function renderAll(){
   const b5=el('tbody'); for(const r of neg){const p=moneyCell(r[6]);p.classList.add('bad');b5.append(el('tr',null,roCell(r[0],'c'),roCell(r[1],'c'),roCell(r[2]),roCell(r[3],'c'),moneyCell(r[4]),moneyCell(r[5]),p))}
   if(neg.length){const p=moneyCell(neg.reduce((a,r)=>a+r[6],0));p.classList.add('bad');b5.append(el('tr',{class:'sum'},roCell('합계','c'),el('td'),el('td'),el('td'),moneyCell(neg.reduce((a,r)=>a+r[4],0)),moneyCell(neg.reduce((a,r)=>a+r[5],0)),p))}
   t5.append(b5); s5.append(el('div',{class:'wrap'},t5)); out.push(s5);
-  const risks=[]; for(const [id,n,d,a] of A)for(const r of a.risk)risks.push([n,r.건설사,r.신용,r.비고]);
-  const s6=el('div',{class:'sheet'},head('⑥ 리스크 — 거래처 신용',risks.length+'건'));
-  const t6=el('table'); t6.append(el('thead',null,el('tr',null,...['팀','건설사','신용','비고'].map(h=>el('th',null,h)))));
-  const b6=el('tbody'); const seen=new Set(); for(const r of risks){const key=r[0]+r[1];if(seen.has(key))continue;seen.add(key);const c=roCell(r[2],'c');c.classList.add(r[2]==='위험'?'bad':'caution');b6.append(el('tr',null,roCell(r[0],'c'),roCell(r[1]),c,roCell(r[3])))}
-  if(!risks.length)b6.append(el('tr',null,el('td',{class:'ro muted',colspan:4},'주의·위험으로 표시된 거래처 없음')));
-  t6.append(b6); s6.append(el('div',{class:'wrap'},t6)); out.push(s6);
   return out}
 
 // ---- login / boot
