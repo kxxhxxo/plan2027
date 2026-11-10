@@ -593,11 +593,12 @@ function inputCell(d,row,col,opts){
     return td}
   if(col.sel==='pm'){
     const list=waitPM(d); const lim=ym(row.예정);
-    const avail=lim?list.filter(x=>x.ym<=lim):list;
+    const avail=lim?list.filter(x=>x.ym<=lim):list, late=lim?list.filter(x=>x.ym>lim):[];
     const sel=el('select',{onchange:e=>{row[col.k]=e.target.value;save(o.team||team);render()}});
     sel.append(el('option',{value:''},''));
     for(const x of avail)sel.append(el('option',{value:x.label},x.label));
-    if(row[col.k]&&!avail.some(x=>x.label===row[col.k]))sel.append(el('option',{value:row[col.k]},row[col.k]+' — 착공 이후 준공'));
+    if(late.length){const og=el('optgroup',{label:'착공('+row.예정+') 이후 가능'});for(const x of late)og.append(el('option',{value:x.label},x.label));sel.append(og)}
+    if(row[col.k]&&!list.some(x=>x.label===row[col.k]))sel.append(el('option',{value:row[col.k]},row[col.k]));
     sel.value=row[col.k]||''; td.append(sel);
     if(row[col.k]&&orders(d).filter(x=>x[col.k]===row[col.k]).length>1)td.className='dup';
     return td}
