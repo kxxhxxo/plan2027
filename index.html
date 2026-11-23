@@ -420,7 +420,7 @@ const SHEETS={
    ],
    blank:()=>({이름:'',현재회사:'',출생년도:'',경력:'',자격증:'',희망지역:'',영입시기:''})},
 };
-let docs={}, team='t1', sheet='수주목표', allSheet='취합', readonly=false, subtab={}, cred=null, lastSaved={};
+let docs={}, team='t1', sheet='수주목표', allSheet='취합', printView=null, readonly=false, subtab={}, cred=null, lastSaved={};
 try{team=localStorage.getItem('bp.team')||team; sheet=localStorage.getItem('bp.sheet')||sheet; subtab=JSON.parse(localStorage.getItem('bp.sub')||'{}')}catch(e){}
 if(!SHEETS[sheet])sheet='안내';
 const setSub=(k,v)=>{subtab[k]=v;try{localStorage.setItem('bp.sub',JSON.stringify(subtab))}catch(e){};render()};
@@ -530,13 +530,14 @@ function syncTop(){document.documentElement.style.setProperty('--topH','0px')}
 window.addEventListener('resize',syncTop);
 function render(){
   RC={};
-  $('#teamTabs').replaceChildren(...TEAMS.map(([id,n])=>el('button',{class:'tab team'+(id===team?' on':''),onclick:()=>{team=id;try{localStorage.setItem('bp.team',id)}catch(e){};render()}},n)));
+  $('#teamTabs').replaceChildren(...TEAMS.map(([id,n])=>el('button',{class:'tab team'+(id===team?' on':''),onclick:()=>{team=id;printView=null;try{localStorage.setItem('bp.team',id)}catch(e){};render()}},n)));
   const st=$('#sheetTabs');
-  if(team==='all')st.replaceChildren(el('div',{class:'nav-h'},'대표 검토'),...[['취합','전사 취합'],['보고서','대표 보고서']].map(([k,t])=>el('button',{class:'sub-i'+(allSheet===k?' on':''),onclick:()=>{allSheet=k;render()}},t)));
-  else st.replaceChildren(...GROUPS.flatMap(([g,keys])=>[el('div',{class:'nav-h'},g),...(g==='인력'&&ROLE==='admin'?[...keys,'소장명단']:keys).map(k=>{const dd=docs[team];const chk=CHECK_PAGES.includes(k)&&dd;return el('button',{class:'sub-i'+(k===sheet?' on':'')+(chk?(doneOf(dd)[k]?' done':' todo'):''),onclick:()=>{sheet=k;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()}},SHEETS[k].t,chk?el('i',{class:'nd'}):null)})]));
+  if(team==='all')st.replaceChildren(el('div',{class:'nav-h'},'대표 검토'),...[['취합','전사 취합'],['보고서','대표 보고서']].map(([k,t])=>el('button',{class:'sub-i'+(allSheet===k&&!printView?' on':''),onclick:()=>{allSheet=k;printView=null;render()}},t)),el('button',{class:'sub-i'+(printView==='orders'?' on':''),onclick:()=>{printView='orders';render()}},'수주목표 출력 (전 팀)'));
+  else st.replaceChildren(...GROUPS.flatMap(([g,keys])=>[el('div',{class:'nav-h'},g),...(g==='인력'&&ROLE==='admin'?[...keys,'소장명단']:keys).map(k=>{const dd=docs[team];const chk=CHECK_PAGES.includes(k)&&dd;return el('button',{class:'sub-i'+(k===sheet?' on':'')+(chk?(doneOf(dd)[k]?' done':' todo'):''),onclick:()=>{sheet=k;printView=null;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()}},SHEETS[k].t,chk?el('i',{class:'nd'}):null)})]));
   const who=$('#who'); if(who)who.textContent=cred?cred.id:''; const td=$('#today'); if(td)td.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'});
   const main=$('#main'); main.replaceChildren();
-  document.body.classList.toggle('reporting',team==='all'&&allSheet==='보고서');
+  document.body.classList.toggle('reporting',(team==='all'&&allSheet==='보고서')||!!printView);
+  if(printView==='orders'){main.append(...renderOrdersPrint(team==='all'?teamList():[[team,teamName(team),docs[team]]]));return}
   if(team==='all'){readonly=false;main.append(...(allSheet==='보고서'?renderReport():renderAll()));return}
   const d=docs[team];
   if(!d){main.append(el('div',{class:'sheet'},el('div',{class:'empty'},'자료를 아직 받지 못했습니다.')));return}
@@ -633,7 +634,7 @@ function prevYear(d,kind,target27){
   return el('div',{class:'prev'},tb)}
 // 시작 — 작성 순서 안내 (플로우)
 function renderGuide(d){
-  const open=k=>{sheet=k;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()};
+  const open=k=>{sheet=k;printView=null;try{localStorage.setItem('bp.sheet',k)}catch(e){};render()};
   const node=(id,title,sub,k,cls)=>{const ok=k&&doneOf(d)[k];const n=el('div',{class:'fn'+(cls?' '+cls:'')+(ok?' ok':''),'data-id':id},el('b',null,title,ok?el('i',{class:'okm'},'✓'):null),sub?el('span',null,sub):null);if(k)n.addEventListener('click',()=>open(k));if(k)n.classList.add('go');return n};
   const col=(title,...ns)=>el('div',{class:'fcol'},el('div',{class:'fct'},title),...ns);
   const flow=el('div',{class:'flow'},
@@ -730,7 +731,6 @@ function renderOrders(d){
     const bc=moneyCell(b26(c)||''); if(b26(c)){bc.classList.add('link');bc.title='내역 보기';bc.addEventListener('click',e=>{e.stopPropagation();showList(c)})}
     tr.append(roCell(c,'bname'),bc,moneyCell(tg(rs)||''),roCell(rs.filter(isFull).length||'','num')); lb.append(tr)}
   {const tot=names.reduce((a,c)=>a+b26(c),0); lb.append(el('tr',{class:'sum'},roCell('합계','c'),moneyCell(tot||''),moneyCell(tg(all)||''),roCell(all.filter(isFull).length||'','num')))}
-  lb.append(el('tr',{class:'sum'},roCell('합계','bname'),moneyCell(tg(all)),roCell(all.filter(isFull).length,'num')));
   lt.append(lb); left.append(el('div',{class:'nowrap'},lt));
   // 오른쪽: 선택 건설사 입력
   const right=el('div',{class:'rcard'});
@@ -741,7 +741,9 @@ function renderOrders(d){
   rows.forEach((row,i)=>{if(!row.id)row.id=uid();const r=el('tr',null,roCell(i+1,'c muted')); for(const c of cols)r.append(inputCell(d,row,c.k==='건설사'?{...c,dl:0}:c,{after:c.num?render:null})); r.append(delBtn(all,all.indexOf(row))); body.append(r)});
   {const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:2},'합계'));for(const c of cols.slice(1)){if(c.k==='목표수주액'){const t=moneyCell(tg(rows));t.title='구분이 목표인 건의 합계';sr.append(t)}else sr.append(el('td'))}sr.append(el('td'));body.append(sr)}
   tb.append(body); right.append(el('div',{class:'nowrap'},tb));
-  if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가'),el('span',{style:'flex:1'}),el('button',{class:'btn',onclick:()=>xlsxTemplate(d)},'엑셀 양식 받기'),el('button',{class:'btn',onclick:()=>xlsxUpload(d)},'엑셀 올리기')));
+  const pb=el('button',{class:'btn',onclick:()=>{printView='orders';render()}},'인쇄 / PDF');
+  if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가'),el('span',{style:'flex:1'}),pb,el('button',{class:'btn',onclick:()=>xlsxTemplate(d)},'엑셀 양식 받기'),el('button',{class:'btn',onclick:()=>xlsxUpload(d)},'엑셀 올리기')));
+  else right.append(el('div',{class:'foot'},el('span',{style:'flex:1'}),pb));
   const lc=el('div',{class:'sheet'},left), rc=el('div',{class:'sheet'},right);
   box.append(el('div',{class:'split'},lc,rc));
   const w=waitPM(d); const noPM=all.filter(r=>(r.현장명||r.건설사)&&!r.예비소장).length;
@@ -1077,22 +1079,56 @@ function barsH(items,opt){opt=opt||{};const W=opt.w||320,rh=16,L=opt.l||120,Rr=5
   return svg}
 const niceStep=r=>{if(r<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(r)));const m=r/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p};
 const kpiCards=items=>el('div',{class:'rk-cards'},...items.map(([l,v,sub,cls])=>el('div',{class:'rk-card'+(cls?' '+cls:'')},el('label',null,l),el('b',null,v),sub?el('span',null,sub):null)));
-// ---- 대표 보고서 (A4 세로 · 전사 요약 1장 + 팀별)
-function renderReport(){
-  const list=teamList(); const A=list.map(([id,n,d])=>[id,n,d,aggTeam(d)]); const T=k=>A.reduce((a,x)=>a+x[3][k],0);
-  const today=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
-  const u=unitLabel(); const M=v=>v===''||v==null||!num(v)||(UNIT==='억'&&Math.abs(num(v))<5e6)?'':fmtM(v); const R=(a,b)=>b&&Math.abs(b)>=1e7?(a/b*100).toFixed(1)+'%':'—'; const D=(a,b)=>a&&b?((a/b-1)*100>=0?'+':'')+((a/b-1)*100).toFixed(1)+'%':'—';
-  const tbl=(cols,rows,opt)=>{const t=el('table',{class:'rt'+(opt&&opt.cls?' '+opt.cls:'')});const cg=el('colgroup');cols.forEach(c=>cg.append(el('col',{style:c.w?'width:'+c.w+'px':''})));t.append(cg);
-    const th=el('thead'); if(opt&&opt.groups){const h1=el('tr'),h2=el('tr');let i=0;for(const [gl,span] of opt.groups){if(!gl){for(let k=0;k<span;k++){h1.append(el('th',{rowspan:2,class:'rs '+(cols[i].a||'')},cols[i].l));i++}}else{h1.append(el('th',{colspan:span,class:'gh'},gl));for(let k=0;k<span;k++){h2.append(el('th',{class:(k===0?'gs ':'')+(cols[i].a||'')},cols[i].l));i++}}}
+// ---- 보고서 공통 helpers
+const rpToday=()=>new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+const rpTbl=(cols,rows,opt)=>{const t=el('table',{class:'rt'+(opt&&opt.cls?' '+opt.cls:'')});const cg=el('colgroup');cols.forEach(c=>cg.append(el('col',{style:c.w?'width:'+c.w+'px':''})));t.append(cg);
+const th=el('thead'); if(opt&&opt.groups){const h1=el('tr'),h2=el('tr');let i=0;for(const [gl,span] of opt.groups){if(!gl){for(let k=0;k<span;k++){h1.append(el('th',{rowspan:2,class:'rs '+(cols[i].a||'')},cols[i].l));i++}}else{h1.append(el('th',{colspan:span,class:'gh'},gl));for(let k=0;k<span;k++){h2.append(el('th',{class:(k===0?'gs ':'')+(cols[i].a||'')},cols[i].l));i++}}}
       // 그룹 첫 열 구분선: 본문 셀에도
       th.append(h1,h2);let ci=0;const gsCols=[];for(const [gl,span] of opt.groups){if(gl)gsCols.push(ci);ci+=span}t.dataset.gs=gsCols.join(',')}
     else th.append(el('tr',null,...cols.map(c=>el('th',{class:c.a||''},c.l)))); t.append(th);const b=el('tbody');
-    const gsSet=new Set((t.dataset.gs||'').split(',').filter(Boolean).map(Number));
+const gsSet=new Set((t.dataset.gs||'').split(',').filter(Boolean).map(Number));
     rows.forEach(r=>{const tr=el('tr',{class:r.cls||''});r.c.forEach((v,i)=>{const td=el('td',{class:(cols[i].a||'')+(r.tc&&r.tc[i]?' '+r.tc[i]:'')+(gsSet.has(i)?' gs':'')});if(v instanceof Node)td.append(v);else td.textContent=v==null?'':v;tr.append(td)});b.append(tr)});
     t.append(b);return t};
-  const sec=(t,note)=>el('div',{class:'rsec'},el('h3',null,t),note?el('span',null,note):null);
-  const pageHead=(title,sub)=>el('div',{class:'rhead'},el('div',null,el('div',{class:'rk'},'(주)부현전기 · 2027년 사업계획'),el('h1',null,title)),el('div',{class:'rsub'},sub));
-  const foot=n=>el('div',{class:'rfoot'},el('span',null,'2027년 사업계획 · 대표 보고'),el('span',null,today+' · 단위: '+u),el('span',null,n));
+const rpSec=(t,note)=>el('div',{class:'rsec'},el('h3',null,t),note?el('span',null,note):null);
+const rpHead=(title,sub)=>el('div',{class:'rhead'},el('div',null,el('div',{class:'rk'},'(주)부현전기 · 2027년 사업계획'),el('h1',null,title)),el('div',{class:'rsub'},sub));
+const rpFoot=n=>el('div',{class:'rfoot'},el('span',null,'2027년 사업계획 · 대표 보고'),el('span',null,rpToday()+' · 단위: '+unitLabel()),el('span',null,n));
+
+// ---- 수주목표 출력 (A4 세로 · 팀당 1장~ · 건설사별 구분)
+function renderOrdersPrint(list){
+  const M=v=>v===''||v==null||!num(v)||(UNIT==='억'&&Math.abs(num(v))<5e6)?'':fmtM(v);
+  const out=[el('div',{class:'rbar noprint'},el('button',{class:'btn',onclick:()=>{printView=null;render()}},'← 돌아가기'),el('span',null,list.length+'팀 · 건설사별 · A4 세로 · 단위: '+unitLabel()),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장'))];
+  for(const [id,n,d] of list){
+    const all=orders(d).filter(r=>r.현장명||r.건설사); const cl=clients(d); const isOther=r=>!cl.includes(r.건설사);
+    const P=d.실적2026||{}; const B26=P.건설사||{}; const nk=v=>koKey(v).replace(/\s|주식회사/g,'');
+    const keysOf=c=>c==='기타'?Object.keys(B26).filter(k=>k==='기타'||!cl.some(x=>nk(x)===nk(k))):Object.keys(B26).filter(k=>nk(k)===nk(c));
+    const b26=c=>keysOf(c).reduce((t,k)=>t+num(B26[k].당초)+num(B26[k].변경),0), k26=c=>keysOf(c).reduce((t,k)=>t+num(B26[k].건수),0);
+    const tg=rs=>rs.filter(x=>normProb(x.가능성)==='목표').reduce((a,x)=>a+num(x.목표수주액),0), tc=rs=>rs.filter(x=>normProb(x.가능성)==='목표').reduce((a,x)=>a+num(x.목표수주액),0)&&rs.filter(x=>normProb(x.가능성)==='목표').length, tk=rs=>rs.filter(x=>normProb(x.가능성)==='검토').reduce((a,x)=>a+num(x.목표수주액),0);
+    const names=[...cl,'기타'].filter(c=>c==='기타'?all.some(isOther):true);
+    const groups=names.map(c=>[c,c==='기타'?all.filter(isOther):all.filter(r=>r.건설사===c)]).filter(([c,rs])=>rs.length||b26(c));
+    const act=num(P.수주실적당초)+num(P.수주실적변경), t27=tg(all);
+    const p=el('div',{class:'rp'});
+    p.append(rpHead(n+' 2027년 수주목표',(d.pm?'PM '+d.pm+' · ':'')+(d.status||'작성 중')));
+    p.append(kpiCards([['2026 수주 목표',M(P.수주목표)||'—',''],['2026 수주 실적',M(act)||'—','달성률 '+(num(P.수주목표)?(act/num(P.수주목표)*100).toFixed(1)+'%':'—')],['2027 수주목표',M(t27)||'—',all.filter(x=>normProb(x.가능성)==='목표').length+'건 · 전년 대비 '+(act&&t27?((t27/act-1)*100>=0?'+':'')+((t27/act-1)*100).toFixed(1)+'%':'—')],['2027 검토',M(tk(all))||'—',all.filter(x=>normProb(x.가능성)==='검토').length+'건'],['건설사',String(groups.length),'예비소장 미정 '+all.filter(r=>!r.예비소장).length+'건']]));
+    // 건설사별 요약
+    p.append(rpSec('건설사별 요약'));
+    p.append(rpTbl([{l:'건설사'},{l:'금액',a:'n',w:84},{l:'건',a:'n',w:36},{l:'금액',a:'n',w:84},{l:'건',a:'n',w:36},{l:'금액',a:'n',w:84},{l:'건',a:'n',w:36}],
+      [...groups.map(([c,rs])=>({c:[c,M(b26(c)),String(k26(c)||''),M(tg(rs)),String(rs.filter(x=>normProb(x.가능성)==='목표').length||''),M(tk(rs)),String(rs.filter(x=>normProb(x.가능성)==='검토').length||'')]})),
+       {cls:'sum',c:['합계',M(act),String(Object.values(B26).reduce((a,o)=>a+num(o.건수),0)||''),M(t27),String(all.filter(x=>normProb(x.가능성)==='목표').length||''),M(tk(all)),String(all.filter(x=>normProb(x.가능성)==='검토').length||'')]}],{groups:[['',1],['2026 실적',2],['2027 목표',2],['2027 검토',2]]}));
+    // 건설사별 상세
+    let no=0;
+    for(const [c,rs] of groups){ if(!rs.length)continue;
+      const sorted=[...rs].sort((x,y)=>(normProb(x.가능성)==='목표'?0:1)-(normProb(y.가능성)==='목표'?0:1)||ym(x.예정)-ym(y.예정)||ko(x.현장명,y.현장명));
+      p.append(rpSec(c,rs.length+'건 · 목표 '+M(tg(rs))+(tk(rs)?' · 검토 '+M(tk(rs)):'')+(b26(c)?' · 2026 실적 '+M(b26(c)):'')));
+      p.append(rpTbl([{l:'No',w:28,a:'c'},...(c==='기타'?[{l:'건설사',w:80}]:[]),{l:'현장명'},{l:'수주액',a:'n',w:84},{l:'구분',w:40,a:'c'},{l:'착공',w:56,a:'c'},{l:'예비소장',w:92},{l:'영업현황',w:150}],
+        [...sorted.map(r=>({c:[String(++no),...(c==='기타'?[r.건설사||'']:[]),r.현장명||'',M(r.목표수주액),normProb(r.가능성),r.예정||'',r.예비소장||'',r.영업현황||''],tc:c==='기타'?[,,,,,,r.예비소장?'':'bad']:[,,,,,r.예비소장?'':'bad']})),
+         {cls:'sum',c:['',...(c==='기타'?['']:[]),'소계',M(tg(rs)),'','','',tk(rs)?'검토 '+M(tk(rs)):'']}],{cls:'wrap'}))}
+    p.append(rpFoot(n+' 수주목표')); out.push(p)}
+  return out}
+// ---- 대표 보고서 (A4 세로 · 전사 요약 1장 + 팀별)
+function renderReport(){
+  const today=rpToday(),tbl=rpTbl,sec=rpSec,pageHead=rpHead,foot=rpFoot;
+  const list=teamList(); const A=list.map(([id,n,d])=>[id,n,d,aggTeam(d)]); const T=k=>A.reduce((a,x)=>a+x[3][k],0);
+  const u=unitLabel(); const M=v=>v===''||v==null||!num(v)||(UNIT==='억'&&Math.abs(num(v))<5e6)?'':fmtM(v); const R=(a,b)=>b&&Math.abs(b)>=1e7?(a/b*100).toFixed(1)+'%':'—'; const D=(a,b)=>a&&b?((a/b-1)*100>=0?'+':'')+((a/b-1)*100).toFixed(1)+'%':'—';
   const out=[];
   // 화면용 도구 막대
   out.push(el('div',{class:'rbar noprint'},el('span',null,A.length+'팀 · 전사 요약 1장 + 팀별 · A4 세로 · 단위: '+u),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
