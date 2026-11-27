@@ -354,6 +354,43 @@ td.link:hover{background:var(--accent-soft)}
 .cstyle .cpan>.rt+.rt{border-top:1px solid var(--c-ln2)}
 .cstyle .cfoot{margin-top:auto;display:flex;justify-content:space-between;font-size:10.5px;color:var(--c-mute);padding-top:6px;border-top:1px solid var(--c-ln2)}
 @media print{ body.reporting .rp.land.cstyle{padding:7mm 9mm 6mm;gap:8px;min-height:209mm} .cstyle .ckc,.cstyle .cpan{box-shadow:none} }
+
+/* 보고서 v2 — 여백·글자 키움 */
+.rp.land.cstyle{font-size:13px;gap:14px;padding:12mm 13mm 10mm}
+.cstyle .chead{padding-bottom:12px}
+.cstyle .chead .ct b{font-size:24px}
+.cstyle .chead .ct span{font-size:13.5px;color:var(--c-sub)}
+.cstyle .cchip{font-size:13px;padding:6px 12px}
+.cstyle .ckcs{grid-template-columns:repeat(4,1fr);gap:14px}
+.cstyle .ckc{padding:16px 20px 14px}
+.cstyle .ckc .kt{padding-bottom:10px;margin-bottom:12px}
+.cstyle .ckc .kt .h{font-size:14px;white-space:nowrap} .cstyle .ckc .kp{white-space:nowrap}
+.cstyle .ckc .kp{font-size:13px}
+.cstyle .kbig{display:flex;align-items:baseline;gap:3px;color:var(--c-strong)}
+.cstyle .kbig b{font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.1}
+.cstyle .kbig small{font-size:15px;font-weight:600;color:var(--c-sub)}
+.cstyle .kbig.neg b{color:var(--c-neg)}
+.cstyle .ksub{font-size:12.5px;color:var(--c-sub);margin-top:6px;white-space:nowrap}
+.cstyle .ksub .pos{color:var(--c-pos);font-weight:700} .cstyle .ksub .neg{color:var(--c-neg);font-weight:700}
+.cstyle .ckc .kb{margin:12px 0 8px;height:7px}
+.cstyle .ckc .kbr{font-size:12px;text-align:left;color:var(--c-mute);margin-top:8px}
+.cstyle .ckc .kb+.kbr{margin-top:0}
+.cstyle .crow{gap:14px}
+.cstyle .cph{height:44px;padding:0 18px;gap:10px}
+.cstyle .cph h3{font-size:15px}
+.cstyle .cph .cu,.cstyle .cph .cr{font-size:12.5px}
+.cstyle .cpan .chart{margin:14px auto 10px}
+.cstyle .chart .ax{font-size:12px}
+.cstyle .chart .bl{font-size:11.5px}
+.cstyle .lg{font-size:12px}
+.cstyle .rt{font-size:13px}
+.cstyle .rt th,.cstyle .rt td{height:31px;padding:0 14px}
+.cstyle .rt th,.cstyle .rt th.n,.cstyle .rt th.c,.cstyle .rt th.rs{height:32px;font-size:12.5px}
+.cstyle .rt tr.sum td{height:36px}
+.cstyle .rt td.n{font-variant-numeric:tabular-nums}
+.cstyle .cempty{padding:40px 0;font-size:13px}
+.cstyle .cfoot{font-size:11px;padding-top:8px}
+@media print{ body.reporting .rp.land.cstyle{padding:11mm 12mm 8mm;gap:12px;min-height:209mm} }
 /* ── 대표 보고서: A4 가로판 (.rp.land) */
 .rp.land{width:297mm;min-height:210mm;padding:11mm 12mm 12mm;font-size:12px;page:land}
 .rbar.wide{width:297mm}
@@ -1154,17 +1191,17 @@ const SVGNS='http://www.w3.org/2000/svg';
 const sv=(tag,attrs,text)=>{const e=document.createElementNS(SVGNS,tag);for(const k in attrs||{})e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e};
 const fmtS=v=>{const a=Math.abs(v);const x=UNIT==='억'?v/1e8:v;if(UNIT!=='억')return (x/1e8).toFixed(a>=1e9?0:1)+'억';return a>=1e10?Math.round(x).toLocaleString('ko-KR'):x.toFixed(1)};
 // 세로 묶음 막대: cats=[라벨…], series=[{name,vals,color}]
-function barsV(cats,series,opt){opt=opt||{};const W=opt.w||660,H=opt.h||150,L=44,Rr=8,T=18,B=22;const iw=W-L-Rr,ih=H-T-B;
+function barsV(cats,series,opt){opt=opt||{};const F=opt.fmt||fmtS;const W=opt.w||660,H=opt.h||150,L=44,Rr=8,T=18,B=22;const iw=W-L-Rr,ih=H-T-B;
   const svg=sv('svg',{viewBox:'0 0 '+W+' '+H,width:W,height:H,class:'chart'});
   const all=series.flatMap(x=>x.vals);let mx=Math.max(0,...all),mn=Math.min(0,...all);if(mx===mn){mx=1}
-  const step=niceStep((mx-mn)/4);mx=Math.ceil(mx/step)*step;mn=Math.floor(mn/step)*step;const y=v=>T+ih*(1-(v-mn)/(mx-mn));
-  for(let v=mn;v<=mx+1e-9;v+=step){svg.append(sv('line',{x1:L,x2:W-Rr,y1:y(v),y2:y(v),stroke:v===0?'#9AA1AC':'#E6E8EC','stroke-width':1}));svg.append(sv('text',{x:L-5,y:y(v)+3,'text-anchor':'end',class:'ax'},fmtS(v)))}
+  let step=niceStep((mx-mn)/4);if(opt.fmt)step=Math.max(1,Math.ceil(step));mx=Math.ceil(mx/step)*step;mn=Math.floor(mn/step)*step;const y=v=>T+ih*(1-(v-mn)/(mx-mn));
+  for(let v=mn;v<=mx+1e-9;v+=step){svg.append(sv('line',{x1:L,x2:W-Rr,y1:y(v),y2:y(v),stroke:v===0?'#9AA1AC':'#E6E8EC','stroke-width':1}));svg.append(sv('text',{x:L-5,y:y(v)+3,'text-anchor':'end',class:'ax'},F(v)))}
   const n=cats.length,gw=iw/n,bw=Math.min(22,(gw*0.7)/series.length);
-  cats.forEach((c,i)=>{const x0=L+gw*i+(gw-bw*series.length)/2;series.forEach((sr,j)=>{const v=sr.vals[i]||0;const yy=y(Math.max(v,0)),h=Math.abs(y(v)-y(0));svg.append(sv('rect',{x:x0+bw*j,y:yy,width:bw-2,height:h,fill:v<0?'#E8695E':sr.color,rx:1}));if(v&&opt.labels)svg.append(sv('text',{x:x0+bw*j+(bw-2)/2,y:v<0?yy+h+9:yy-3,'text-anchor':'middle',class:'bl'},fmtS(v)))});svg.append(sv('text',{x:L+gw*i+gw/2,y:H-7,'text-anchor':'middle',class:'ax'},c))});
+  cats.forEach((c,i)=>{const x0=L+gw*i+(gw-bw*series.length)/2;series.forEach((sr,j)=>{const v=sr.vals[i]||0;const yy=y(Math.max(v,0)),h=Math.abs(y(v)-y(0));svg.append(sv('rect',{x:x0+bw*j,y:yy,width:bw-2,height:h,fill:v<0?'#E8695E':sr.color,rx:1}));if(v&&opt.labels)svg.append(sv('text',{x:x0+bw*j+(bw-2)/2,y:v<0?yy+h+9:yy-3,'text-anchor':'middle',class:'bl'},F(v)))});svg.append(sv('text',{x:L+gw*i+gw/2,y:H-7,'text-anchor':'middle',class:'ax'},c))});
   return svg}
 const legend=series=>el('span',{class:'lg'},...series.map(sr=>el('i',null,el('b',{style:'background:'+sr.color}),sr.name)));
 // 가로 막대: items=[{label,val,sub}]
-function barsH(items,opt){opt=opt||{};const W=opt.w||320,rh=16,L=opt.l||120,Rr=52,H=items.length*rh+6;const iw=W-L-Rr;
+function barsH(items,opt){opt=opt||{};const W=opt.w||320,rh=opt.rh||16,L=opt.l||120,Rr=52,H=items.length*rh+6;const iw=W-L-Rr;
   const svg=sv('svg',{viewBox:'0 0 '+W+' '+H,width:W,height:H,class:'chart'});
   const mx=Math.max(1,...items.map(x=>Math.abs(x.val)));const neg=items.some(x=>x.val<0);const zero=neg?L+iw/2:L;const sc=(neg?iw/2:iw)/mx;
   svg.append(sv('line',{x1:zero,x2:zero,y1:0,y2:H,stroke:'#9AA1AC'}));
@@ -1222,137 +1259,136 @@ function renderOrdersPrint(list){
 // ---- 대표 보고서 (A4 세로 · 전사 요약 1장 + 팀별)
 function renderReport(){
   const today=rpToday(),tbl=rpTbl;
-  const list=teamList(); const A=list.map(([id,n,d])=>[id,n,d,aggTeam(d)]); const T=k=>A.reduce((a,x)=>a+x[3][k],0);
-  const u=unitLabel(); const M=v=>v===''||v==null||!num(v)||(UNIT==='억'&&Math.abs(num(v))<5e6)?'':fmtM(v); const R=(a,b)=>b&&Math.abs(b)>=1e7?(a/b*100).toFixed(1)+'%':'—'; const D=(a,b)=>a&&b?((a/b-1)*100>=0?'+':'')+((a/b-1)*100).toFixed(1)+'%':'—';
+  const list=teamList(); const A=list.map(([id,n,d])=>[id,n,d,aggTeam(d)]);
+  const u=unitLabel(), cu=u==='억원'?'억':u;
+  const M=v=>v===''||v==null||!num(v)||(UNIT==='억'&&Math.abs(num(v))<5e6)?'':fmtM(v);
+  const R=(a,b)=>b&&Math.abs(b)>=1e7?(a/b*100).toFixed(1)+'%':'—';
+  const D=(a,b)=>a&&b?((a/b-1)*100>=0?'+':'')+((a/b-1)*100).toFixed(1)+'%':'—';
+  const dc=(a,b)=>a&&b?(a>=b?'pos':'neg'):'';
   const out=[];
-  // ── 경영현황 C 규격 부품
   const BL='#6E8FBF',GR='#C6C0BA';
   const row=(...parts)=>el('div',{class:'crow'},...parts.filter(Boolean).map(([w,...kids])=>el('div',{class:'ccol',style:'flex:'+w},...kids.filter(Boolean))));
   let pno=0;
   const pan=(title,note,right,...kids)=>el('section',{class:'cpan'},el('div',{class:'cph'},el('i',null,String(++pno).padStart(2,'0')),el('h3',null,title),note?el('span',{class:'cu'},note):null,right?el('span',{class:'cr'},right):null),...kids.filter(Boolean));
   const empty=t=>el('div',{class:'cempty'},t);
   const page=(title,sub,chip)=>{pno=0;const p=el('div',{class:'rp land cstyle'});p.append(el('div',{class:'chead'},el('div',{class:'ct'},el('b',null,title),el('span',null,sub)),chip?el('div',{class:'cchip'},chip):null));return p};
-  const fin=(p,label)=>{p.append(el('div',{class:'cfoot'},el('span',null,'(주)부현전기 · 2027년 사업계획 · 대표 보고'),el('span',null,today+' · 단위: '+u),el('span',null,label)));out.push(p)};
-  const unitOf=s=>{const m=String(s).match(/^(.*?)([억원명개건%]*)$/);return m?[m[1],m[2]]:[s,'']};
-  const big=v=>{if(v===''||v==null)return el('b',null,'—');const [x,un]=unitOf(v);return el('b',null,x,un?el('small',null,un):null)};
-  // 카드: [제목, 오른쪽 % 문구, 좋음?, [라벨1,값1,나쁨?], [라벨2,값2,나쁨?], 막대비율(0~1|null), 아래 문구, 아래 나쁨?]
-  const kc=([t,pc,good,a,b,bar,ft,ftBad])=>el('div',{class:'ckc'},
-    el('div',{class:'kt'},el('span',{class:'h'},t),pc?el('b',{class:'kp '+(good?'pos':'neg')},pc):null),
-    el('div',{class:'kv'},...[a,b].map(([l,v,bad])=>el('div',{class:bad?'bad':''},el('em',null,l),big(v)))),
-    bar==null?el('div',{class:'kb none'}):el('div',{class:'kb'},el('s',{class:good?'pos':'neg',style:'width:'+Math.max(0,Math.min(100,bar*100)).toFixed(1)+'%'})),
-    el('div',{class:'kbr'},el('em',{class:ftBad?'neg':''},ft||'')));
-  const cards=list=>el('div',{class:'ckcs'},...list.map(kc));
-  const rate=(a,b)=>b?a/b:null;
-  const cu=u==='억원'?'억':u;
-  const kpiSet=g=>{const ordR=rate(g.ord26,g.ord26t), salR=rate(g.sales26,g.sales26t), PL=g.G-g.K, PL26=g.sales26-g.cost26;
-    const neg=g._neg;
-    return [
-      ['수주',ordR!=null?R(g.ord26,g.ord26t):'',ordR!=null&&ordR>=.9,['2026 실적',M(g.ord26)+(M(g.ord26)?cu:'')],['2027 목표',M(g.target)+(M(g.target)?cu:'')],ordR,'목표 '+(M(g.ord26t)||'—')+' · 27년 '+D(g.target,g.ord26)],
-      ['매출',salR!=null?R(g.sales26,g.sales26t):'',salR!=null&&salR>=.9,['2026 기성',M(g.sales26)+(M(g.sales26)?cu:'')],['2027 기성',M(g.G)+(M(g.G)?cu:'')],salR,'목표 '+(M(g.sales26t)||'—')+' · 27년 '+D(g.G,g.sales26)],
-      ['손익',g.G?'이익률 '+R(PL,g.G):'',PL>=0,['2026 손익',M(PL26)+(M(PL26)?cu:''),PL26<0],['2027 손익',M(PL)+(M(PL)?cu:''),PL<0],null,'2027 투입 '+(M(g.K)||'—')+(M(g.K)?cu:'')],
-      ['인력',g.unassigned?'미배치 '+g.unassigned+'명':'배치 완료',!g.unassigned,['대기 소장',g.wait+'명'],['미배치',g.unassigned+'명',g.unassigned>0],g.wait?(g.wait-g.unassigned)/g.wait:null,'소장 미정 수주 '+g.orderNoPM+'건',g.orderNoPM>0],
-      ['현장',neg?'적자 '+neg+'곳':'',!neg,['진행 현장',g.sites+'개'],['적자 예상',neg+'개',neg>0],null,'설변·정산 진행 '+g.dc+'건']]};
+  const fin=(p,label)=>{p.append(el('div',{class:'cfoot'},el('span',null,'(주)부현전기 · 2027년 사업계획'),el('span',null,today+' · 단위: '+u),el('span',null,label)));out.push(p)};
+  const chunk=(arr,max)=>{if(!arr.length)return [[]];const pg=Math.ceil(arr.length/max),n=Math.ceil(arr.length/pg);const r=[];for(let i=0;i<arr.length;i+=n)r.push(arr.slice(i,i+n));return r};
+  // 지표 카드: {t, badge, good, big, unit, sub:[[text,cls]...], bar, foot}
+  const card=o=>el('div',{class:'ckc'},
+    el('div',{class:'kt'},el('span',{class:'h'},o.t),o.badge?el('b',{class:'kp '+(o.good?'pos':'neg')},o.badge):null),
+    el('div',{class:'kbig'+(o.bad?' neg':'')},el('b',null,o.big||'—'),o.big&&o.unit?el('small',null,o.unit):null),
+    el('div',{class:'ksub'},...(o.sub||[]).map(([t,c])=>el('span',{class:c||''},t))),
+    o.bar==null?null:el('div',{class:'kb'},el('s',{class:o.good?'pos':'neg',style:'width:'+Math.max(0,Math.min(100,o.bar*100)).toFixed(1)+'%'})),
+    o.foot?el('div',{class:'kbr'},o.foot):null);
+  const cards=g=>{const PL=g.G-g.K, PL26=g.sales26-g.cost26; const oR=g.ord26t?g.ord26/g.ord26t:null, sR=g.sales26t?g.sales26/g.sales26t:null;
+    return el('div',{class:'ckcs'},
+      card({t:'2027 수주',badge:oR!=null?'26년 달성 '+R(g.ord26,g.ord26t):'',good:oR!=null&&oR>=.9,big:M(g.target),unit:cu,sub:[['2026 실적 '+(M(g.ord26)||'—')+cu+' 대비 '],[D(g.target,g.ord26),dc(g.target,g.ord26)]],bar:oR,foot:'2026 목표 '+(M(g.ord26t)||'—')+cu}),
+      card({t:'2027 매출',badge:sR!=null?'26년 달성 '+R(g.sales26,g.sales26t):'',good:sR!=null&&sR>=.9,big:M(g.G),unit:cu,sub:[['2026 기성 '+(M(g.sales26)||'—')+cu+' 대비 '],[D(g.G,g.sales26),dc(g.G,g.sales26)]],bar:sR,foot:'2026 목표 '+(M(g.sales26t)||'—')+cu}),
+      card({t:'2027 손익',badge:g.G?'이익률 '+R(PL,g.G):'',good:PL>=0,bad:PL<0,big:M(PL)||(g.G?'0':''),unit:cu,sub:[['2026 손익 '],[(M(PL26)||'—')+cu,PL26<0?'neg':''],[' · 이익률 '+R(PL26,g.sales26)]],foot:'2027 투입 '+(M(g.K)||'—')+cu}),
+      card({t:'대기 소장',badge:g.unassigned?'미배치 '+g.unassigned+'명':'배치 완료',good:!g.unassigned,big:String(g.wait),unit:'명',sub:[['소장 미정 수주현장 '],[g.orderNoPM+'건',g.orderNoPM?'neg':'']],foot:'진행 현장 '+g.sites+'개 · 적자 예상 '+g._neg+'개'}))};
   for(const x of A)x[3]._neg=salesRows(x[2]).filter(r=>gTot(r,2027)-cost(r,2027)<0).length;
   const TT={};for(const k of ['ord26','ord26t','ord26a','ord26b','target','sales26','sales26t','sales26run','sales26done','cost26','G','K','C','wait','unassigned','orderNoPM','sites','dc','dcAmt','issues','_neg','tcnt','cnt'])TT[k]=A.reduce((a,x)=>a+(num(x[3][k])||0),0);
   const GK=TT.G-TT.K;
-  // 화면용 도구 막대
-  out.push(el('div',{class:'rbar wide noprint'},el('span',null,A.length+'팀 · 전사 요약 2장 + 팀별 4장 · A4 가로 · 단위: '+u),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
+  out.push(el('div',{class:'rbar wide noprint'},el('span',null,A.length+'팀 · A4 가로 · 단위: '+u),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
+  const names=A.map(x=>x[1]);
+  const lgd=s=>legend(s);
 
-  // ── 전사 요약 1/2 : 지표 + 그래프 + 2026 실적
+  // ── 전사 1 : 한눈에
   {const p=page('전사 요약','2027년 사업계획 · 보고일 '+today,A.length+'개 팀');
-   p.append(cards(kpiSet(TT)));
-   const s1=[{name:'목표',vals:A.map(x=>x[3].ord26t),color:GR},{name:'실적',vals:A.map(x=>x[3].ord26),color:BL}],s2=[{name:'2026',vals:A.map(x=>x[3].sales26),color:GR},{name:'2027',vals:A.map(x=>x[3].G),color:BL}];
-   p.append(row([1,pan('2026 수주 — 목표 · 실적',u,legend(s1),barsV(A.map(x=>x[1]),s1,{w:330,h:150}))],
-                [1,pan('매출 — 2026 · 2027',u,legend(s2),barsV(A.map(x=>x[1]),s2,{w:330,h:150}))],
-                [1,pan('2027 손익',u,null,barsV(A.map(x=>x[1]),[{name:'손익',vals:A.map(x=>x[3].G-x[3].K),color:BL}],{w:330,h:150,labels:true}))]));
-   p.append(pan('2026년 실적',u,'수주 '+R(TT.ord26,TT.ord26t)+' · 매출 '+R(TT.sales26,TT.sales26t),
-     tbl([{l:'팀',w:60,a:'c'},{l:'목표',a:'n'},{l:'당초',a:'n'},{l:'변경',a:'n'},{l:'합계',a:'n'},{l:'달성률',a:'n',w:76},{l:'목표',a:'n'},{l:'예정 기성',a:'n'},{l:'달성률',a:'n',w:76},{l:'투입',a:'n'},{l:'손익',a:'n'},{l:'이익률',a:'n',w:72}],
-      [...A.map(([id,n,d,g])=>({c:[n,M(g.ord26t),M(g.ord26a),M(g.ord26b),M(g.ord26),R(g.ord26,g.ord26t),M(g.sales26t),M(g.sales26),R(g.sales26,g.sales26t),M(g.cost26),M(g.sales26-g.cost26),R(g.sales26-g.cost26,g.sales26)],tc:[,,,,,g.ord26t&&g.ord26<g.ord26t?'bad':'pos',,,g.sales26t&&g.sales26<g.sales26t?'bad':'pos',,g.sales26-g.cost26<0?'bad':'',g.sales26-g.cost26<0?'bad':'']})),
-       {cls:'sum',c:['합계',M(TT.ord26t),M(TT.ord26a),M(TT.ord26b),M(TT.ord26),R(TT.ord26,TT.ord26t),M(TT.sales26t),M(TT.sales26),R(TT.sales26,TT.sales26t),M(TT.cost26),M(TT.sales26-TT.cost26),R(TT.sales26-TT.cost26,TT.sales26)],tc:[,,,,,,,,,,TT.sales26-TT.cost26<0?'bad':'',TT.sales26-TT.cost26<0?'bad':'']}],{groups:[['',1],['수주',5],['매출',3],['손익',3]]})));
-   fin(p,'요약 1/2')}
-  // ── 전사 요약 2/2 : 2027 계획 + 인력·리스크
-  {const p=page('전사 요약 — 2027 계획','2027년 사업계획 · 보고일 '+today,A.length+'개 팀');
-   p.append(pan('팀별 2027 계획',u,'손익 '+M(GK)+' · 이익률 '+R(GK,TT.G),
-     tbl([{l:'팀',w:60,a:'c'},{l:'PM',w:96,a:'c'},{l:'수주',a:'n'},{l:'매출',a:'n'},{l:'수주목표',a:'n'},{l:'전년 대비',a:'n',w:80},{l:'기성',a:'n'},{l:'전년 대비',a:'n',w:80},{l:'투입',a:'n'},{l:'손익',a:'n'},{l:'이익률',a:'n',w:70},{l:'현장',a:'n',w:52},{l:'상태',w:70,a:'c'}],
-      [...A.map(([id,n,d,g])=>({c:[n,d.pm||'',M(g.ord26),M(g.sales26),M(g.target),D(g.target,g.ord26),M(g.G),D(g.G,g.sales26),M(g.K),M(g.G-g.K),R(g.G-g.K,g.G),String(g.sites),d.status||'작성 중'],tc:[,,,,,,,,,g.G-g.K<0?'bad':'',g.G-g.K<0?'bad':'']})),
-       {cls:'sum',c:['합계','',M(TT.ord26),M(TT.sales26),M(TT.target),D(TT.target,TT.ord26),M(TT.G),D(TT.G,TT.sales26),M(TT.K),M(GK),R(GK,TT.G),String(TT.sites),''],tc:[,,,,,,,,,GK<0?'bad':'',GK<0?'bad':'']}],{groups:[['',2],['2026 실적',2],['2027 계획',7],['',2]]})));
-   p.append(row([4,pan('2026 · 2027 비교',u,null,tbl([{l:'구분',w:96,a:'c'},{l:'목표',a:'n'},{l:'실적',a:'n'},{l:'달성률',a:'n',w:70},{l:'계획',a:'n'},{l:'전년 대비',a:'n',w:76}],[
-      {c:['수주',M(TT.ord26t),M(TT.ord26),R(TT.ord26,TT.ord26t),M(TT.target),D(TT.target,TT.ord26)]},
-      {c:['매출(기성)',M(TT.sales26t),M(TT.sales26),R(TT.sales26,TT.sales26t),M(TT.G),D(TT.G,TT.sales26)]},
-      {c:['투입','',M(TT.cost26),'',M(TT.K),D(TT.K,TT.cost26)]},
-      {c:['손익','',M(TT.sales26-TT.cost26),'',M(GK),''],tc:[,,TT.sales26-TT.cost26<0?'bad':'',,GK<0?'bad':'']},
-      {cls:'sum',c:['이익률','',R(TT.sales26-TT.cost26,TT.sales26),'',R(GK,TT.G),'']}],{groups:[['',1],['2026',3],['2027',2]]}))],
-    [6,pan('인력 · 리스크','건',null,tbl([{l:'팀',w:60,a:'c'},{l:'대기 소장',a:'n'},{l:'미배치',a:'n'},{l:'소장 미정',a:'n'},{l:'적자 예상',a:'n'},{l:'설변 진행',a:'n'},{l:'설변 금액',a:'n'},{l:'이슈',a:'n'},{l:'영입',a:'n'}],
-      [...A.map(([id,n,d,g])=>({c:[n,String(g.wait||''),String(g.unassigned||''),String(g.orderNoPM||''),String(g._neg||''),String(g.dc||''),M(g.dcAmt||''),String(g.issues||''),String((d.소장영입||[]).filter(r=>r.이름).length||'')],tc:[,,g.unassigned?'bad':'',g.orderNoPM?'bad':'',g._neg?'bad':'']})),
-       {cls:'sum',c:['합계',String(TT.wait),String(TT.unassigned),String(TT.orderNoPM),String(TT._neg),String(TT.dc),M(TT.dcAmt),String(TT.issues),String(A.reduce((a,[,,d])=>a+(d.소장영입||[]).filter(r=>r.이름).length,0))]}],{groups:[['',1],['인력',3],['현장 리스크',4],['',1]]}))]));
-   fin(p,'요약 2/2')}
+   p.append(cards(TT));
+   const s2=[{name:'2026',vals:A.map(x=>x[3].sales26),color:GR},{name:'2027',vals:A.map(x=>x[3].G),color:BL}];
+   p.append(row([3,pan('팀별 매출 — 2026 · 2027',u,lgd(s2),barsV(names,s2,{w:620,h:250,labels:true}))],
+                [2,pan('팀별 2027 손익',u,null,barsV(names,[{name:'손익',vals:A.map(x=>x[3].G-x[3].K),color:BL}],{w:420,h:250,labels:true}))]));
+   fin(p,'전사 1/4')}
+  // ── 전사 2 : 2026 실적
+  {const p=page('2026년 실적','수주 '+R(TT.ord26,TT.ord26t)+' · 매출 '+R(TT.sales26,TT.sales26t)+' 달성',A.length+'개 팀');
+   const s1=[{name:'목표',vals:A.map(x=>x[3].ord26t),color:GR},{name:'실적',vals:A.map(x=>x[3].ord26),color:BL}],s3=[{name:'목표',vals:A.map(x=>x[3].sales26t),color:GR},{name:'예정 기성',vals:A.map(x=>x[3].sales26),color:BL}];
+   p.append(row([1,pan('수주 — 목표 · 실적',u,lgd(s1),barsV(names,s1,{w:520,h:190}))],[1,pan('매출 — 목표 · 예정 기성',u,lgd(s3),barsV(names,s3,{w:520,h:190}))]));
+   p.append(pan('팀별 2026 실적',u,null,
+     tbl([{l:'팀',w:64,a:'c'},{l:'목표',a:'n'},{l:'실적',a:'n'},{l:'달성률',a:'n',w:86},{l:'목표',a:'n'},{l:'예정 기성',a:'n'},{l:'달성률',a:'n',w:86},{l:'투입',a:'n'},{l:'손익',a:'n'},{l:'이익률',a:'n',w:80}],
+      [...A.map(([id,n,d,g])=>{const pl=g.sales26-g.cost26;return {c:[n,M(g.ord26t),M(g.ord26),R(g.ord26,g.ord26t),M(g.sales26t),M(g.sales26),R(g.sales26,g.sales26t),M(g.cost26),M(pl),R(pl,g.sales26)],tc:[,,,g.ord26<g.ord26t?'bad':'pos',,,g.sales26<g.sales26t?'bad':'pos',,pl<0?'bad':'',pl<0?'bad':'']}}),
+       {cls:'sum',c:['합계',M(TT.ord26t),M(TT.ord26),R(TT.ord26,TT.ord26t),M(TT.sales26t),M(TT.sales26),R(TT.sales26,TT.sales26t),M(TT.cost26),M(TT.sales26-TT.cost26),R(TT.sales26-TT.cost26,TT.sales26)],tc:[,,,,,,,,TT.sales26-TT.cost26<0?'bad':'',TT.sales26-TT.cost26<0?'bad':'']}],{groups:[['',1],['수주',3],['매출',3],['손익',3]]})));
+   fin(p,'전사 2/4')}
+  // ── 전사 3 : 2027 계획
+  {const p=page('2027년 팀별 계획','손익 '+(M(GK)||'—')+cu+' · 이익률 '+R(GK,TT.G),A.length+'개 팀');
+   p.append(pan('팀별 2027 계획',u,null,
+     tbl([{l:'팀',w:64,a:'c'},{l:'PM',w:110,a:'c'},{l:'수주목표',a:'n'},{l:'전년 대비',a:'n',w:92},{l:'기성',a:'n'},{l:'전년 대비',a:'n',w:92},{l:'투입',a:'n'},{l:'손익',a:'n'},{l:'이익률',a:'n',w:80},{l:'상태',w:80,a:'c'}],
+      [...A.map(([id,n,d,g])=>({c:[n,d.pm||'',M(g.target),D(g.target,g.ord26),M(g.G),D(g.G,g.sales26),M(g.K),M(g.G-g.K),R(g.G-g.K,g.G),d.status||'작성 중'],tc:[,,,dc(g.target,g.ord26),,dc(g.G,g.sales26),,g.G-g.K<0?'bad':'',g.G-g.K<0?'bad':'']})),
+       {cls:'sum',c:['합계','',M(TT.target),D(TT.target,TT.ord26),M(TT.G),D(TT.G,TT.sales26),M(TT.K),M(GK),R(GK,TT.G),''],tc:[,,,dc(TT.target,TT.ord26),,dc(TT.G,TT.sales26),,GK<0?'bad':'',GK<0?'bad':'']}],{groups:[['',2],['수주',2],['매출',2],['손익',3],['',1]]})));
+   p.append(row([1,pan('2026 · 2027 전사 비교',u,null,tbl([{l:'구분',w:110,a:'c'},{l:'2026 실적',a:'n'},{l:'2027 계획',a:'n'},{l:'증감',a:'n'},{l:'증감률',a:'n',w:90}],[
+      {c:['수주',M(TT.ord26),M(TT.target),M(TT.target-TT.ord26),D(TT.target,TT.ord26)],tc:[,,,,dc(TT.target,TT.ord26)]},
+      {c:['매출(기성)',M(TT.sales26),M(TT.G),M(TT.G-TT.sales26),D(TT.G,TT.sales26)],tc:[,,,,dc(TT.G,TT.sales26)]},
+      {c:['투입',M(TT.cost26),M(TT.K),M(TT.K-TT.cost26),D(TT.K,TT.cost26)]},
+      {cls:'sum',c:['손익',M(TT.sales26-TT.cost26),M(GK),M(GK-(TT.sales26-TT.cost26)),''],tc:[,TT.sales26-TT.cost26<0?'bad':'',GK<0?'bad':'']}]))]));
+   fin(p,'전사 3/4')}
+  // ── 전사 4 : 인력 · 리스크
+  {const p=page('인력 · 리스크','대기 소장 '+TT.wait+'명 · 미배치 '+TT.unassigned+'명 · 적자 예상 '+TT._neg+'곳',A.length+'개 팀');
+   const s4=[{name:'대기 소장',vals:A.map(x=>x[3].wait),color:GR},{name:'미배치',vals:A.map(x=>x[3].unassigned),color:'#E8695E'}];
+   p.append(row([1,pan('팀별 소장 대기 · 미배치','명',lgd(s4),barsV(names,s4,{w:520,h:190,labels:true,fmt:v=>String(Math.round(v))}))],[1,pan('팀별 적자 예상 현장','곳',null,barsV(names,[{name:'적자',vals:A.map(x=>x[3]._neg),color:'#E8695E'}],{w:520,h:190,labels:true,fmt:v=>String(Math.round(v))}))]));
+   p.append(pan('팀별 인력 · 리스크',null,null,tbl([{l:'팀',w:64,a:'c'},{l:'대기 소장',a:'n'},{l:'미배치',a:'n'},{l:'소장 미정 수주',a:'n'},{l:'영입 계획',a:'n'},{l:'진행 현장',a:'n'},{l:'적자 예상',a:'n'},{l:'설변 진행',a:'n'},{l:'이슈',a:'n'}],
+      [...A.map(([id,n,d,g])=>({c:[n,String(g.wait||''),String(g.unassigned||''),String(g.orderNoPM||''),String((d.소장영입||[]).filter(r=>r.이름).length||''),String(g.sites||''),String(g._neg||''),String(g.dc||''),String(g.issues||'')],tc:[,,g.unassigned?'bad':'',g.orderNoPM?'bad':'',,,g._neg?'bad':'']})),
+       {cls:'sum',c:['합계',String(TT.wait),String(TT.unassigned),String(TT.orderNoPM),String(A.reduce((a,[,,d])=>a+(d.소장영입||[]).filter(r=>r.이름).length,0)),String(TT.sites),String(TT._neg),String(TT.dc),String(TT.issues)]}],{groups:[['',1],['인력 (명 · 건)',4],['현장 (곳 · 건)',4]]})));
+   fin(p,'전사 4/4')}
 
   // ── 팀별
   for(const [id,n,d,g] of A){
     const P=d.실적2026||{}; const chip=(d.pm?'PM '+d.pm+' · ':'')+(d.status||'작성 중');
-    const dn=doneSites(d), PL=g.G-g.K;
-    // A. 요약
-    {const p=page(n+' 사업계획','2027년 사업계획 · 보고일 '+today,chip);
-     p.append(cards(kpiSet(g)));
+    const dn=doneSites(d), PL=g.G-g.K; const pages=[];
+    // T1 한눈에
+    {const p=page(n,'2027년 사업계획 · 보고일 '+today,chip);
+     p.append(cards(g));
      const su0=orders(d).filter(r=>isFull(r)&&normProb(r.가능성)==='목표');const bb={};for(const r of su0){bb[r.건설사||'기타']=(bb[r.건설사||'기타']||0)+num(r.목표수주액)}
-     const bi=Object.entries(bb).sort((x,y)=>y[1]-x[1]).slice(0,7).map(([l,v])=>({label:l,val:v,color:BL}));
-     const b26=Object.entries(P.건설사||{}).map(([l,o])=>({label:l,val:num(o.당초)+num(o.변경),color:GR})).filter(x=>x.val).sort((x,y)=>y.val-x.val).slice(0,7);
-     const pl=sites(d).map(r=>({label:r.현장명||'',val:gTot(r,2027)-cost(r,2027),color:BL})).filter(x=>x.val).sort((x,y)=>y.val-x.val);const pi=pl.length>8?[...pl.slice(0,4),...pl.slice(-4)]:pl;
-     p.append(row([1,pan('건설사별 2026 수주 실적',u,'상위 7',b26.length?barsH(b26,{w:330,l:110}):empty('—'))],
-                  [1,pan('건설사별 2027 수주목표',u,'상위 7',bi.length?barsH(bi,{w:330,l:110}):empty('수주목표 입력 전'))],
-                  [1,pan('현장별 2027 손익',u,pl.length>8?'상·하위 4':null,pi.length?barsH(pi,{w:330,l:130}):empty('매출·손익 입력 전'))]));
-     p.append(row([5,pan('2026 · 2027 비교',u,null,tbl([{l:'구분',w:96,a:'c'},{l:'목표',a:'n'},{l:'실적',a:'n'},{l:'달성률',a:'n',w:70},{l:'계획',a:'n'},{l:'전년 대비',a:'n',w:76}],[
-        {c:['수주',M(g.ord26t),M(g.ord26),R(g.ord26,g.ord26t),M(g.target),D(g.target,g.ord26)],tc:[,,,g.ord26t&&g.ord26<g.ord26t?'bad':'pos']},
-        {c:['매출(기성)',M(g.sales26t),M(g.sales26),R(g.sales26,g.sales26t),M(g.G),D(g.G,g.sales26)],tc:[,,,g.sales26t&&g.sales26<g.sales26t?'bad':'pos']},
-        {c:['투입','',M(g.cost26),'',M(g.K),D(g.K,g.cost26)]},
-        {c:['손익','',M(g.sales26-g.cost26),'',M(PL),''],tc:[,,g.sales26-g.cost26<0?'bad':'',,PL<0?'bad':'']},
-        {cls:'sum',c:['이익률','',R(g.sales26-g.cost26,g.sales26),'',R(PL,g.G),''],tc:[,,g.sales26-g.cost26<0?'bad':'',,PL<0?'bad':'']}],{groups:[['',1],['2026',3],['2027',2]]}))],
-       [5,pan('2026 매출 구성',u,null,tbl([{l:'구분',w:120,a:'c'},{l:'금액',a:'n'},{l:'비고',a:'c'}],[
-        {c:['진행 현장 기성',M(g.sales26run),sites(d).length+'개 현장']},{c:['준공 현장 기성',M(g.sales26done),dn.length+'개 현장']},{cls:'sum',c:['매출 합계',M(g.sales26),'목표 '+(M(g.sales26t)||'—')+' · '+R(g.sales26,g.sales26t)]},
-        {c:['2026 투입',M(g.cost26),'']},{cls:'sum',c:['2026 손익',M(g.sales26-g.cost26),'이익률 '+R(g.sales26-g.cost26,g.sales26)],tc:[,g.sales26-g.cost26<0?'bad':'']}]))]));
-     fin(p,n+' 1/4')}
-    // B. 수주
-    {const p=page(n+' — 수주','2026 실적 · 2027 목표',chip);
-     const su=orders(d).filter(isFull); const bs={};
+     const bi=Object.entries(bb).sort((x,y)=>y[1]-x[1]).slice(0,8).map(([l,v])=>({label:l,val:v,color:BL}));
+     const pl=sites(d).map(r=>({label:r.현장명||'',val:gTot(r,2027)-cost(r,2027),color:BL})).filter(x=>x.val).sort((x,y)=>y.val-x.val);const pi=pl.length>10?[...pl.slice(0,5),...pl.slice(-5)]:pl;
+     p.append(row([1,pan('건설사별 2027 수주목표',u,bi.length?'상위 '+bi.length:null,bi.length?barsH(bi,{w:520,l:150,rh:26}):empty('수주목표 입력 전'))],
+                  [1,pan('현장별 2027 손익',u,pl.length>10?'상위 5 · 하위 5':null,pi.length?barsH(pi,{w:520,l:190,rh:26}):empty('매출·손익 입력 전'))]));
+     pages.push(p)}
+    // T2 수주
+    {const su=orders(d).filter(isFull); const bs={};
      for(const r of su){const b=r.건설사||'기타';const o=bs[b]||(bs[b]={t:0,c:0,n:0,m:0});if(normProb(r.가능성)==='목표'){o.t+=num(r.목표수주액);o.n++}else{o.c+=num(r.목표수주액);o.m++}}
      const b26=(P.건설사||{}); for(const b in b26){const o=bs[b]||(bs[b]={t:0,c:0,n:0,m:0});o.a=num(b26[b].당초)+num(b26[b].변경);o.k=num(b26[b].건수)}
      let bl=Object.entries(bs).sort((x,y)=>(y[1].t-x[1].t)||((y[1].a||0)-(x[1].a||0))||ko(x[0],y[0]));
-     const MAXB=14; let restRow=null;
-     if(bl.length>MAXB){const rest=bl.slice(MAXB);bl=bl.slice(0,MAXB);const s=k=>rest.reduce((a,x)=>a+(x[1][k]||0),0);restRow={c:['그 외 '+rest.length+'개사',M(s('a')),String(s('k')||''),M(s('t')),String(s('n')||''),M(s('c')),String(s('m')||'')]}}
+     const MAXB=13; let restRow=null;
+     if(bl.length>MAXB){const rest=bl.slice(MAXB);bl=bl.slice(0,MAXB);const s=k=>rest.reduce((a,x)=>a+(x[1][k]||0),0);restRow={c:['그 외 '+rest.length+'개사',M(s('a')),M(s('t')),M(s('c'))]}}
      const all=Object.values(bs); const S=k=>all.reduce((a,o)=>a+(o[k]||0),0);
+     const bt=tbl([{l:'건설사'},{l:'2026 실적',a:'n',w:96},{l:'2027 목표',a:'n',w:96},{l:'2027 검토',a:'n',w:96}],
+        [...bl.map(([b,o])=>({c:[b,M(o.a||''),M(o.t||''),M(o.c||'')]})),restRow,{cls:'sum',c:['합계',M(S('a')),M(S('t')),M(S('c'))]}].filter(Boolean));
      const sul=[...su].sort((x,y)=>(normProb(x.가능성)==='목표'?0:1)-(normProb(y.가능성)==='목표'?0:1)||ym(x.예정)-ym(y.예정)||ko(x.건설사,y.건설사));
-     p.append(row([4,pan('건설사별 수주',u,null,tbl([{l:'건설사'},{l:'금액',a:'n',w:70},{l:'건',a:'n',w:34},{l:'금액',a:'n',w:70},{l:'건',a:'n',w:34},{l:'금액',a:'n',w:64},{l:'건',a:'n',w:34}],
-        [...bl.map(([b,o])=>({c:[b,M(o.a||''),String(o.k||''),M(o.t||''),String(o.n||''),M(o.c||''),String(o.m||'')]})),restRow,
-         {cls:'sum',c:['합계',M(S('a')),String(S('k')||''),M(S('t')),String(S('n')||''),M(S('c')),String(S('m')||'')]}].filter(Boolean),{cls:'dense',groups:[['',1],['2026 실적',2],['2027 목표',2],['2027 검토',2]]}))],
-       [6,pan('2027 수주 현장',u,su.length+'건 · 목표 '+g.tcnt+'건',sul.length?tbl([{l:'No',w:30,a:'c'},{l:'건설사',w:96},{l:'현장명'},{l:'수주액',a:'n',w:70},{l:'구분',w:44,a:'c'},{l:'착공',w:62,a:'c'},{l:'예비소장',w:110}],
-        sul.map((r,i)=>({c:[String(i+1),r.건설사||'',r.현장명||'',M(r.목표수주액),normProb(r.가능성),r.예정||'',r.예비소장||'미정'],tc:[,,,,,,r.예비소장?'':'bad']})),{cls:'dense'}):empty('수주목표 입력 전'))]));
-     fin(p,n+' 2/4')}
-    // C. 매출·손익 + 인력·리스크
-    {const p=page(n+' — 매출·손익','2027년 현장별',chip);
-     const rs=salesRows(d).filter(r=>r.fixed?num(r.g2027)||cost(r,2027):true);
-     p.append(pan('2027 현장별 매출·손익',u,'기성 '+M(g.G)+' · 손익 '+M(PL)+' · 이익률 '+R(PL,g.G)+' · 2028 기성 '+M(salesRows(d).reduce((a,r)=>a+gTot(r,2028),0)),
-      tbl([{l:'No',w:30,a:'c'},{l:'건설사',w:100},{l:'현장명'},{l:'소장',w:64,a:'c'},{l:'준공',w:64,a:'c'},{l:'계약금액',a:'n',w:86},{l:'2027 기성',a:'n',w:86},{l:'투입',a:'n',w:86},{l:'손익',a:'n',w:80},{l:'이익률',a:'n',w:66}],
-       [...rs.map((r,i)=>{const G=gTot(r,2027),K=cost(r,2027);return {c:[String(i+1),r.fixed?'':r.건설사||'',r.fixed?'신규 수주 현장':r.현장명||'',r.소장||'',toYM(r.준공예정),M(r.계약||''),M(G||''),M(K||''),G||K?M(G-K):'',G||K?R(G-K,G):''],tc:[,,,,,,,,G-K<0?'bad':'',G-K<0?'bad':'']}}),
-        {cls:'sum',c:['','합계','','','',M(g.C),M(g.G),M(g.K),M(PL),R(PL,g.G)],tc:[,,,,,,,,PL<0?'bad':'',PL<0?'bad':'']}],{cls:'dense'})));
-     fin(p,n+' 3/4')}
-    {const p=page(n+' — 인력 · 리스크','2027년 계획',chip);
+     const ck=chunk(sul,15);
+     ck.forEach((part,ci)=>{const p=page(n+' · 수주',su.length+'건 · 목표 '+g.tcnt+'건 '+(M(g.target)||'—')+cu,chip);
+       const lst=part.length?tbl([{l:'No',w:40,a:'c'},{l:'건설사',w:120},{l:'현장명'},{l:'수주액',a:'n',w:86},{l:'구분',w:56,a:'c'},{l:'착공',w:76,a:'c'},{l:'예비소장',w:130,a:'c'}],
+         part.map((r,i)=>({c:[String(ck.slice(0,ci).reduce((a,x)=>a+x.length,0)+i+1),r.건설사||'',r.현장명||'',M(r.목표수주액),normProb(r.가능성),r.예정||'',r.예비소장?r.예비소장.replace(/\s*\(.*\)$/,''):'미정'],tc:[,,,,,,r.예비소장?'':'bad']}))):empty('수주목표 입력 전');
+       if(ci===0)p.append(row([2,pan('건설사별',u,null,bt)],[3,pan('2027 수주 현장',u,ck.length>1?'1/'+ck.length:null,lst)]));
+       else p.append(pan('2027 수주 현장 (계속)',u,(ci+1)+'/'+ck.length,lst));
+       pages.push(p)})}
+    // T3 매출·손익
+    {const rs=salesRows(d).filter(r=>r.fixed?num(r.g2027)||cost(r,2027):true);
+     const ck=chunk(rs,17);
+     ck.forEach((part,ci)=>{const p=page(n+' · 매출·손익','기성 '+(M(g.G)||'—')+cu+' · 손익 '+(M(PL)||'—')+cu+' · 이익률 '+R(PL,g.G),chip);
+       const last=ci===ck.length-1;
+       p.append(pan('2027 현장별 매출·손익'+(ci?' (계속)':''),u,ck.length>1?(ci+1)+'/'+ck.length:null,
+        tbl([{l:'No',w:40,a:'c'},{l:'건설사',w:120},{l:'현장명'},{l:'소장',w:72,a:'c'},{l:'준공',w:76,a:'c'},{l:'2027 기성',a:'n',w:100},{l:'투입',a:'n',w:100},{l:'손익',a:'n',w:96},{l:'이익률',a:'n',w:80}],
+         [...part.map((r,i)=>{const G=gTot(r,2027),K=cost(r,2027);return {c:[String(ck.slice(0,ci).reduce((a,x)=>a+x.length,0)+i+1),r.fixed?'':r.건설사||'',r.fixed?'신규 수주 현장':r.현장명||'',r.소장||'',toYM(r.준공예정),M(G||''),M(K||''),G||K?M(G-K):'',G||K?R(G-K,G):''],tc:[,,,,,,,G-K<0?'bad':'',G-K<0?'bad':'']}}),
+          last?{cls:'sum',c:['','합계','','','',M(g.G),M(g.K),M(PL),R(PL,g.G)],tc:[,,,,,,,PL<0?'bad':'',PL<0?'bad':'']}:null].filter(Boolean))));
+       pages.push(p)})}
+    // T4 인력·리스크
+    {const p=page(n+' · 인력 · 리스크','대기 소장 '+g.wait+'명 · 미배치 '+g.unassigned+'명 · 적자 예상 '+g._neg+'곳',chip);
      const w=ownWait(d); const rec=(d.소장영입||[]).filter(r=>r.이름);
      const neg=salesRows(d).filter(r=>gTot(r,2027)-cost(r,2027)<0); const dcs=sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)); const iss=sites(d).filter(r=>r.이슈||r.본사지원);
-     p.append(row([1,pan('소장 배치 — 2027.12까지 준공','명',w.length+'명 · 미배치 '+g.unassigned,w.length?tbl([{l:'준공',w:64,a:'c'},{l:'소장',w:70,a:'c'},{l:'현 현장'},{l:'배치 예정 현장'}],
-        w.map(x=>{const o=pickedBy(d,'예비소장',x.label);return {c:[x.m,x.site.소장,x.site.현장명,o?(o.현장명||'')+(o.예정?' ('+o.예정+')':''):'미배치'],tc:[,,,o?'':'bad']}})):empty('해당 없음'),
-        rec.length?tbl([{l:'영입 대상',w:70,a:'c'},{l:'현재 근무회사'},{l:'출생',w:52,a:'c'},{l:'영입 시기',w:76,a:'c'}],rec.map(r=>({c:[r.이름,r.현재회사||'',r.출생년도||'',r.영입시기||'']}))):null)],
-      [1,pan('리스크',null,'적자 '+neg.length+' · 설변 '+dcs.length+' · 이슈 '+iss.length,
-        neg.length?tbl([{l:'적자 예상 현장'},{l:'2027 기성',a:'n',w:80},{l:'투입',a:'n',w:80},{l:'손익',a:'n',w:76}],neg.map(r=>({c:[(r.fixed?'신규 수주 현장':r.현장명),M(gTot(r,2027)),M(cost(r,2027)),M(gTot(r,2027)-cost(r,2027))],tc:[,,,'bad']}))):null,
-        dcs.length?tbl([{l:'설계변경 · 정산 진행 현장'},{l:'계약현황',w:76,a:'c'},{l:'예정금액',a:'n',w:80},{l:'변경계약',w:70,a:'c'}],dcs.map(r=>({c:[r.현장명,r.설변.계약현황,M(r.설변.예정금액||''),r.설변.예정||'']}))):null,
-        (!neg.length&&!dcs.length)?empty('해당 없음'):null)]));
-     if(iss.length)p.append(pan('이슈 · 본사 지원 요청',null,iss.length+'건',tbl([{l:'현장',w:180},{l:'이슈'},{l:'대응 방안'},{l:'본사 지원 요청'},{l:'기한',w:70,a:'c'}],iss.map(r=>({c:[r.현장명,r.이슈||'',r.대응||'',r.본사지원||'',r.기한||'']})),{cls:'wrap'})));
-     const edu=(d.교육계획||[]).filter(r=>r.주제); const nc=(d.신규거래처||[]).filter(r=>r.건설사);
-     if(edu.length||nc.length)p.append(row(edu.length?[1,pan('교육 계획',null,edu.length+'건',tbl([{l:'구분',w:50,a:'c'},{l:'예정',w:70,a:'c'},{l:'교육 주제'},{l:'대상',w:110}],edu.map(r=>({c:[r.구분,r.예정||r.반기||'',r.주제,r.대상||'']})),{cls:'wrap'}))]:null,
-       nc.length?[1,pan('신규 거래처',null,nc.length+'개사',tbl([{l:'건설사',w:110},{l:'시평액(억)',a:'n',w:76},{l:'등록 현황',w:80,a:'c'},{l:'영업 지원 필요사항'}],nc.map(r=>({c:[r.건설사,r.시평액?fmt(r.시평액):'',r.등록현황||'',r.지원필요||'']})),{cls:'wrap'}))]:null));
-     if(dn.length)p.append(pan('2026 준공·종료 현장',u,dn.length+'곳 · 기성 '+M(g.sales26done),tbl([{l:'No',w:30,a:'c'},{l:'건설사',w:100},{l:'현장명'},{l:'소장',w:64,a:'c'},{l:'계약금액',a:'n',w:86},{l:'기성 누계',a:'n',w:86},{l:'2026 기성',a:'n',w:86},{l:'2026 투입',a:'n',w:86},{l:'손익',a:'n',w:80},{l:'이익률',a:'n',w:66}],
-       [...dn.map((r,i)=>{const G=gTot(r,2026),K=cost(r,2026);return {c:[String(i+1),r.건설사||'',r.현장명||'',r.소장||'',M(r.계약||''),M(num(r.전회)+G||''),M(G||''),M(K||''),G||K?M(G-K):'',G||K?R(G-K,G):''],tc:[,,,,,,,,G-K<0?'bad':'',G-K<0?'bad':'']}}),
-        {cls:'sum',c:['','합계','','',M(dn.reduce((a,r)=>a+num(r.계약),0)),M(dn.reduce((a,r)=>a+num(r.전회)+gTot(r,2026),0)),M(g.sales26done),M(dn.reduce((a,r)=>a+cost(r,2026),0)),M(g.sales26done-dn.reduce((a,r)=>a+cost(r,2026),0)),R(g.sales26done-dn.reduce((a,r)=>a+cost(r,2026),0),g.sales26done)]}],{cls:'dense'})));
-     fin(p,n+' 4/4')}
+     p.append(row([1,pan('소장 배치',null,w.length?w.length+'명':null,w.length?tbl([{l:'준공',w:80,a:'c'},{l:'소장',w:80,a:'c'},{l:'배치 예정 현장'}],
+        w.map(x=>{const o=pickedBy(d,'예비소장',x.label);return {c:[x.m,x.site.소장,o?(o.현장명||'')+(o.예정?' · '+o.예정:''):'미배치'],tc:[,,o?'':'bad']}})):empty('해당 없음'),
+        rec.length?tbl([{l:'영입 대상',w:90,a:'c'},{l:'현재 근무회사'},{l:'영입 시기',w:90,a:'c'}],rec.map(r=>({c:[r.이름,r.현재회사||'',r.영입시기||'']}))):null)],
+      [1,pan('적자 예상 현장',u,neg.length?neg.length+'곳':null,neg.length?tbl([{l:'현장명'},{l:'2027 기성',a:'n',w:96},{l:'손익',a:'n',w:90}],neg.map(r=>({c:[(r.fixed?'신규 수주 현장':r.현장명),M(gTot(r,2027)),M(gTot(r,2027)-cost(r,2027))],tc:[,,'bad']}))):empty('해당 없음'),
+        dcs.length?tbl([{l:'설계변경 · 정산 진행'},{l:'예정금액',a:'n',w:96},{l:'변경계약',w:90,a:'c'}],dcs.map(r=>({c:[r.현장명,M(r.설변.예정금액||''),r.설변.예정||'']}))):null)]));
+     pages.push(p);
+     if(iss.length||dn.length){const p2=page(n+' · 이슈 · 2026 준공 현장','',chip);
+      if(iss.length)p2.append(pan('이슈 · 본사 지원 요청',null,iss.length+'건',tbl([{l:'현장',w:200},{l:'이슈'},{l:'대응 방안'},{l:'본사 지원 요청'}],iss.map(r=>({c:[r.현장명,r.이슈||'',r.대응||'',r.본사지원||'']})),{cls:'wrap'})));
+      if(dn.length)p2.append(pan('2026 준공 · 종료 현장',u,dn.length+'곳',tbl([{l:'No',w:40,a:'c'},{l:'건설사',w:120},{l:'현장명'},{l:'2026 기성',a:'n',w:100},{l:'2026 투입',a:'n',w:100},{l:'손익',a:'n',w:96},{l:'이익률',a:'n',w:80}],
+        [...dn.map((r,i)=>{const G=gTot(r,2026),K=cost(r,2026);return {c:[String(i+1),r.건설사||'',r.현장명||'',M(G||''),M(K||''),G||K?M(G-K):'',G||K?R(G-K,G):''],tc:[,,,,,G-K<0?'bad':'',G-K<0?'bad':'']}}),
+         {cls:'sum',c:['','합계','',M(g.sales26done),M(dn.reduce((a,r)=>a+cost(r,2026),0)),M(g.sales26done-dn.reduce((a,r)=>a+cost(r,2026),0)),R(g.sales26done-dn.reduce((a,r)=>a+cost(r,2026),0),g.sales26done)]}])));
+      pages.push(p2)}}
+    pages.forEach((p,i)=>fin(p,n+' '+(i+1)+'/'+pages.length));
   }
   return out}
 // ---- login / boot
