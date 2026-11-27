@@ -1376,7 +1376,9 @@ function renderReport(){
   const slide=(title)=>{const p=el('div',{class:'rp land bh'});p.append(el('div',{class:'bh-h'},el('h1',null,title),el('img',{src:'img/logo.png',alt:''})));return p};
   const done=(p)=>{pg++;const kids=[...p.children].slice(1);if(kids.length&&!p.classList.contains('div'))p.append(el('div',{class:'bh-body'},...kids));p.append(el('div',{class:'bh-f'},el('span',null,String(pg))));out.push(p)};
   const sub=t=>el('div',{class:'bh-sub'},el('i'),t);
-  const ring=(label,color,lines)=>{const S=260,R=110,W=26;const svg=sv('svg',{viewBox:'0 0 '+S+' '+S,width:S,height:S});svg.append(sv('circle',{cx:S/2,cy:S/2,r:R,fill:'none',stroke:color,'stroke-width':W}));
+  const ring=(label,color,lines,rate)=>{const S=260,R=110,W=26;const svg=sv('svg',{viewBox:'0 0 '+S+' '+S,width:S,height:S});
+    if(rate==null)svg.append(sv('circle',{cx:S/2,cy:S/2,r:R,fill:'none',stroke:color,'stroke-width':W}));
+    else{const C=2*Math.PI*R,f=Math.max(0,Math.min(1,rate));svg.append(sv('circle',{cx:S/2,cy:S/2,r:R,fill:'none',stroke:'#E7E6E6','stroke-width':W}));if(f>0)svg.append(sv('circle',{cx:S/2,cy:S/2,r:R,fill:'none',stroke:color,'stroke-width':W,'stroke-dasharray':(C*f).toFixed(2)+' '+C.toFixed(2),transform:'rotate(-90 '+S/2+' '+S/2+')'}))}
     return el('div',{class:'bh-ring'},el('div',{class:'rl'},label),el('div',{class:'rd'}),el('div',{class:'rc'},svg,el('div',{class:'rt'},...lines.map(([t,c],i)=>[i?el('div',{class:'sep'}):null,el('div',{class:'ln'+(c?' '+c:'')},t)]).flat().filter(Boolean))))};
   // 표: 머리 회색, 합계 남색, % 노란칸, 달성 100% 이상 팀 주황 점선 묶음
   const goalTable=(rows,total,{unit='억원'}={})=>{const t=el('table',{class:'bh-t'});
@@ -1404,7 +1406,7 @@ function renderReport(){
   S.forEach(([lbl,col,f,foot],i)=>{const p=slide('1. 2026년 목표달성 현황 _ '+lbl);
     const [tg,ta]=f(TT);
     const rows=A.map(([id,n,d,g])=>{const [gg,aa]=f(g);return {n,pm:pmOf(d),goal:gg?E(gg)+' 억원':'-',act:E1(aa)+' 억원',pc:gg>0?P(aa,gg):'-',hit:gg>0&&aa>=gg,bad:aa<0}});
-    p.append(el('div',{class:'bh-split'},el('div',{class:'l'},ring(lbl,col,[['목표 : '+E(tg)+'억'],['달성 : '+E(ta)+'억',ta<0?'neg':''],['달성률 : '+(tg>0?P(ta,tg):'-')]]),el('div',{class:'foot'},foot)),
+    p.append(el('div',{class:'bh-split'},el('div',{class:'l'},ring(lbl,col,[['목표 : '+E(tg)+'억'],['달성 : '+E(ta)+'억',ta<0?'neg':''],['달성률 : '+(tg>0?P(ta,tg):'-')]],tg>0?ta/tg:0),el('div',{class:'foot'},foot)),
       el('div',{class:'r'},goalTable(rows,{goal:E(tg)+' 억원',act:E(ta)+' 억원',pc:tg>0?P(ta,tg):'-'}))));
     done(p)});
   // ── 2. 2027 영업목표
