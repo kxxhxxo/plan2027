@@ -1298,7 +1298,7 @@ function renderReport(){
   for(const x of A)x[3]._neg=salesRows(x[2]).filter(r=>gTot(r,2027)-cost(r,2027)<0).length;
   const TT={};for(const k of ['ord26','ord26t','ord26a','ord26b','target','sales26','sales26t','sales26run','sales26done','cost26','G','K','C','wait','unassigned','orderNoPM','sites','dc','dcAmt','issues','_neg','tcnt','cnt'])TT[k]=A.reduce((a,x)=>a+(num(x[3][k])||0),0);
   const GK=TT.G-TT.K;
-  out.push(el('div',{class:'rbar wide noprint'},el('span',null,A.length+'팀 · A4 가로 · 단위: '+u),el('label',{class:'apxck'},el('input',{type:'checkbox',checked:rpAppendix||null,onchange:e=>{rpAppendix=e.target.checked;render()}}),' 부록 (현장 목록)'),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
+  out.push(el('div',{class:'rbar wide noprint'},el('span',null,A.length+'팀 · A4 가로 · 단위: '+u),el('label',{class:'apxck'},(()=>{const c=el('input',{type:'checkbox',onchange:e=>{rpAppendix=e.target.checked;render()}});c.checked=rpAppendix;return c})(),' 부록 (현장 목록)'),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
   const names=A.map(x=>x[1]);
   const lgd=s=>legend(s);
 
