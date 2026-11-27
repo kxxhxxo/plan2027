@@ -1481,9 +1481,9 @@ function renderReport(){
    {const p=slide('3. 현장 관리자(소장) 배치 계획 _ 명단');
     const mx=Math.max(1,...groups.map(g=>g[3].length)); const rh=Math.max(14,Math.min(26,Math.floor(560/(mx+1))));
     p.append(el('div',{class:'bh-3col'},...groups.map(([k,t,c,arr])=>{const tb=el('table',{class:'bh-list'+(rh<18?' tight':''),style:'--rh:'+rh+'px'});
-      tb.append(el('thead',null,el('tr',null,el('th',{style:'width:44px'},'팀'),el('th',{style:'width:56px'},'소장'),el('th',{style:'width:58px'},'준공'),el('th',null,'배치 예정 현장'))));
-      const b=el('tbody');arr.forEach(w=>b.append(el('tr',null,el('td',null,w.team),el('td',null,w.pm),el('td',null,w.m),el('td',{class:'nm'+(w.to&&!w.clash?'':' red')},w.to?w.to+(w.st?' ('+w.st+' 착공'+(w.clash?' · 준공 전':'')+')':''):'미배치'))));
-      if(!arr.length)b.append(el('tr',null,el('td',{colspan:4},'-')));
+      tb.append(el('thead',null,el('tr',null,el('th',{style:'width:34px'},'팀'),el('th',{style:'width:46px'},'소장'),el('th',null,'현재 현장'),el('th',{style:'width:60px'},'준공'),el('th',null,'배치 예정 현장'))));
+      const b=el('tbody');arr.forEach(w=>b.append(el('tr',null,el('td',null,w.team),el('td',null,w.pm),el('td',{class:'nm'},w.site),el('td',null,w.m),el('td',{class:'nm'+(w.to?'':' red')},w.to||'미배치'))));
+      if(!arr.length)b.append(el('tr',null,el('td',{colspan:5},'-')));
       tb.append(b);
       return el('div',{class:'col'},el('div',{class:'gh',style:'background:'+c},t,el('b',null,arr.length+'명')),tb)})));
     done(p)}
