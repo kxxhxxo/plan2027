@@ -1507,7 +1507,7 @@ function renderReport(){
         P.push(T(17,cy,w.team,{a:'middle'}),T(59,cy,w.pm,{a:'middle'}),T(88,cy,w.ends.map(e=>sn(e.site)).join(' → '),{fs:w.ends.length>1?8.2:9,fit:158}));
         w.ends.forEach((e,i)=>{const last=i===w.ends.length-1,cx=X0+MW*ix(e.m)+MW/2;
           P.push(`<rect x="${cx-MW/2+3}" y="${y+2}" width="${MW-6}" height="${RH-4}" rx="2" fill="${last?'#DDEBF7':'#fff'}" stroke="${last?'#9DC3E6':'#BDD7EE'}" stroke-width="1"/>`,T(cx,cy,'준공',{a:'middle',c:last?'#1F4E79':'#7F9DBF',fs:8.5,w:700}))});
-        const nx=X0+MW*(ix(w.m)+1)+4, txt=w.to?(w.kind==='진행'?'[진행] ':'[배치예정] ')+(w.tob?bn(w.tob)+' - ':'')+sn(w.to):'[배치필요]';
+        const nx=X0+MW*(ix(w.m)+1)+4, txt=w.to?(w.kind==='진행'?'[진행] ':'[수주목표] ')+(w.tob?bn(w.tob)+' - ':'')+sn(w.to):'[배치필요]';
         P.push(T(nx,cy,txt,{c:!w.to?'#C00000':w.kind==='진행'?'#595959':'#E94D0A',fs:9.3,w:700,h:1}));
         y+=RH}}
     const gl=[];for(let i=0;i<=14;i++){const b=i===0||i===2||i===14;gl.push(`<line x1="${X0+MW*i}" x2="${X0+MW*i}" y1="${b?0:HH/2}" y2="${y}" stroke="${b?'#595959':'#A6A6A6'}" stroke-width="${b?1:.7}"/>`)}
