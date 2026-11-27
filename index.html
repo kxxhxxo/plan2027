@@ -752,7 +752,7 @@ const WIN=[ym('2026.11'),ym('2027.12')];
 const ownWait=d=>sites(d).filter(r=>r.소장&&toYM(r.준공예정)&&ym(toYM(r.준공예정))>=WIN[0]&&ym(toYM(r.준공예정))<=WIN[1]).map(r=>({m:toYM(r.준공예정),label:label(r.소장.trim(),toYM(r.준공예정)),ym:ym(toYM(r.준공예정)),site:r}));
 const pickedBy=(d,field,lab)=>orders(d).find(x=>x[field]===lab);
 // 준공 후 갈 곳: 수주목표 예비소장 → 없으면 같은 소장이 맡은 더 늦게 끝나는 진행 현장(겸임)
-const nextOf=(d,x)=>{const o=pickedBy(d,'예비소장',x.label); if(o)return {현장명:o.현장명,건설사:o.건설사||'',예정:o.예정||'',kind:'신규'};
+const nextOf=(d,x)=>{const nm0=x.site.소장.trim();const o=pickedBy(d,'예비소장',x.label)||orders(d).find(r=>String(r.예비소장||'').split(' (')[0].trim()===nm0); if(o)return {현장명:o.현장명,건설사:o.건설사||'',예정:o.예정||'',kind:'신규'};
   const nm=x.site.소장.trim(); const c=sites(d).filter(r=>r!==x.site&&(r.소장||'').trim()===nm&&(!toYM(r.준공예정)||ym(toYM(r.준공예정))>x.ym)).sort((a,b)=>(ym(toYM(a.준공예정))||1e9)-(ym(toYM(b.준공예정))||1e9))[0];
   return c?{현장명:c.현장명,건설사:c.건설사||'',예정:'',kind:'진행'}:null};
 const roster=()=>(docs.hq&&docs.hq.소장명단)||[];
