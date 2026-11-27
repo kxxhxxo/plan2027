@@ -622,7 +622,7 @@ const CHECK_PAGES=['현장구성','거래처','수주목표','매출목표','이
 const doneOf=d=>d.done||(d.done={}); const doneCnt=d=>CHECK_PAGES.filter(k=>doneOf(d)[k]).length; const missing=d=>CHECK_PAGES.filter(k=>!doneOf(d)[k]).map(k=>SHEETS[k].t);
 let ROLE='team';
 const YEARS=[2026,2027,2028]; const ACTUAL={2026:10};
-const SITE_MONTHS=(()=>{const a=[];for(let y=2026;y<=2030;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
+const SITE_MONTHS=(()=>{const a=[];for(let y=2026;y<=2032;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
 const MONTHS=(()=>{const a=[];for(let y=2026;y<=2028;y++)for(let m=1;m<=12;m++){if(y===2026&&m<11)continue;a.push(y+'.'+String(m).padStart(2,'0'))}return a})();
 const PROB={'목표':1,'검토':0};
 const YEARS_B=(()=>{const a=[];const y0=new Date().getFullYear();for(let y=y0-25;y>=y0-70;y--)a.push(String(y));return a})();
