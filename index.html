@@ -356,6 +356,10 @@ td.link:hover{background:var(--accent-soft)}
 @media print{ body.reporting .rp.land.cstyle{padding:7mm 9mm 6mm;gap:8px;min-height:209mm} .cstyle .ckc,.cstyle .cpan{box-shadow:none} }
 
 
+
+.cstyle .ckcs.c4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.cstyle .ckcs.c4 .cwhole>.ckc{background:#fff;border-color:#14110E;box-shadow:inset 0 3px 0 #14110E;height:100%;box-sizing:border-box}
+.cstyle .ckcs.c4 .ckc.c5 .kt .h{white-space:nowrap}
 /* 경영현황 C 지표 카드 (yc kc) 그대로 */
 .cstyle .ckcs.c5{grid-template-columns:repeat(5,1fr);gap:12px}
 .cstyle .ckc.c5{background:#FBFAF9;border:1px solid #E2E8F0;border-radius:10px;padding:14px 18px 14px}
@@ -1317,13 +1321,14 @@ function renderReport(){
      el('div',{class:'kt'},el('span',{class:'h'},o.t),o.side?el('em',{class:'kr'+(o.sideBad?' neg':'')},o.side):null,el('b',{class:'kp '+(good?'pos':'neg')},pc)),
      el('div',{class:'kv'},el('div',null,el('em',null,o.l1||'목표'),el('b',null,o.v1,el('small',null,o.u||'억'))),el('div',null,el('em',null,o.l2||'달성'),el('b',{class:o.bad2?'neg':''},o.v2,el('small',null,o.u||'억')))),
      el('div',{class:'kbr'},el('div',{class:'kb'+(good?'':' bad')},el('s',{style:'width:'+(r==null?0:Math.max(0,Math.min(100,r*100))).toFixed(1)+'%'})),el('em',{class:'ky'},o.fl+' ',el('b',{class:o.fBad?'neg':'pos'},o.fv))))};
-  const cards=g=>{const PL=g.G-g.K, PL26=g.sales26-g.cost26, PLt=g.sales26t-g.cost26t;
-    return el('div',{class:'ckcs c5'},
-      cC({t:'수주',side:'2026',goal:g.ord26t,act:g.ord26,v1:E(g.ord26t),v2:E(g.ord26),fl:'2027 목표',fv:E(g.target)+'억',fBad:false}),
-      cC({t:'매출',side:'2026',goal:g.sales26t,act:g.sales26,v1:E(g.sales26t),v2:E(g.sales26),fl:'2027 계획',fv:E(g.G)+'억',fBad:g.G<g.sales26}),
-      cC({t:'투입',side:'2026',goal:g.cost26t,act:g.cost26,v1:g.cost26t?E(g.cost26t):'—',v2:E(g.cost26),good:!(g.cost26t&&g.sales26t)||(g.cost26/g.cost26t)<=(g.sales26/g.sales26t),fl:'2027 계획',fv:E(g.K)+'억',fBad:false}),
-      cC({t:'손익',side:'2026',goal:PLt,act:PL26,v1:g.cost26t?E(PLt):'—',v2:E(PL26),bad2:PL26<0,pc:PLt>0?Math.round(PL26/PLt*100)+'%':'—',good:g.cost26t?PL26>=PLt:PL26>=0,fl:'2027 계획',fv:E(PL)+'억',fBad:PL<0}),
-      cC({t:'소장',side:'2027.12까지 준공',goal:g.wait,act:g.wait-g.unassigned,u:'명',l1:'대기',l2:'배치',v1:String(g.wait),v2:String(g.wait-g.unassigned),pc:g.wait?Math.round((g.wait-g.unassigned)/g.wait*100)+'%':'—',good:!g.unassigned,fl:'미배치',fv:g.unassigned+'명',fBad:g.unassigned>0}))};
+  // 지표별 카드 (제목만 바꿔 전사·팀 공용)
+  const MK={
+    수주:(g,t)=>cC({t:t||'수주',side:t?'':'2026',goal:g.ord26t,act:g.ord26,v1:E(g.ord26t),v2:E(g.ord26),fl:'2027 목표',fv:E(g.target)+'억',fBad:false}),
+    매출:(g,t)=>cC({t:t||'매출',side:t?'':'2026',goal:g.sales26t,act:g.sales26,v1:E(g.sales26t),v2:E(g.sales26),fl:'2027 계획',fv:E(g.G)+'억',fBad:g.G<g.sales26}),
+    투입:(g,t)=>cC({t:t||'투입',side:t?'':'2026',goal:g.cost26t,act:g.cost26,v1:g.cost26t?E(g.cost26t):'—',v2:E(g.cost26),good:!(g.cost26t&&g.sales26t)||(g.cost26/g.cost26t)<=(g.sales26/g.sales26t),fl:'2027 계획',fv:E(g.K)+'억',fBad:false}),
+    손익:(g,t)=>{const PL=g.G-g.K,PL26=g.sales26-g.cost26,PLt=g.sales26t-g.cost26t;return cC({t:t||'손익',side:t?'':'2026',goal:PLt,act:PL26,v1:g.cost26t?E(PLt):'—',v2:E(PL26),bad2:PL26<0,pc:PLt>0?Math.round(PL26/PLt*100)+'%':'—',good:g.cost26t?PL26>=PLt:PL26>=0,fl:'2027 계획',fv:E(PL)+'억',fBad:PL<0})},
+    소장:(g,t)=>cC({t:t||'소장',side:t?'':'2027.12까지 준공',goal:g.wait,act:g.wait-g.unassigned,u:'명',l1:'대기',l2:'배치',v1:String(g.wait),v2:String(g.wait-g.unassigned),pc:g.wait?Math.round((g.wait-g.unassigned)/g.wait*100)+'%':'—',good:!g.unassigned,fl:'미배치',fv:g.unassigned+'명',fBad:g.unassigned>0})};
+  const cards=g=>el('div',{class:'ckcs c5'},...['수주','매출','투입','손익','소장'].map(k=>MK[k](g)));
   for(const x of A)x[3]._neg=salesRows(x[2]).filter(r=>gTot(r,2027)-cost(r,2027)<0).length;
   const TT={};for(const k of ['cost26t','ord26','ord26t','ord26a','ord26b','target','sales26','sales26t','sales26run','sales26done','cost26','G','K','C','wait','unassigned','orderNoPM','sites','dc','dcAmt','issues','_neg','tcnt','cnt'])TT[k]=A.reduce((a,x)=>a+(num(x[3][k])||0),0);
   const GK=TT.G-TT.K;
@@ -1337,27 +1342,24 @@ function renderReport(){
    const s2=[{name:'2026',vals:A.map(x=>x[3].sales26),color:GR},{name:'2027',vals:A.map(x=>x[3].G),color:BL}];
    p.append(row([3,pan('팀별 매출 — 2026 · 2027',u,lgd(s2),barsV(names,s2,{w:620,h:250,labels:true}))],
                 [2,pan('팀별 2027 손익',u,null,barsV(names,[{name:'손익',vals:A.map(x=>x[3].G-x[3].K),color:BL}],{w:420,h:250,labels:true}))]));
-   fin(p,'전사 1/4')}
-  // ── 전사 2 : 2026 실적
-  {const p=page('2026년 실적','수주 '+R(TT.ord26,TT.ord26t)+' · 매출 '+R(TT.sales26,TT.sales26t)+' 달성',A.length+'개 팀');
-   p.append(pan('팀별 2026 실적',u,null,
-     tbl([{l:'팀',w:90,a:'c'},{l:'수주 목표',a:'n'},{l:'수주 실적',a:'n'},{l:'달성률',a:'n',w:120},{l:'매출 목표',a:'n'},{l:'예정 기성',a:'n'},{l:'달성률',a:'n',w:120}],
-      [...A.map(([id,n,d,g])=>({c:[n,M(g.ord26t),M(g.ord26),R(g.ord26,g.ord26t),M(g.sales26t),M(g.sales26),R(g.sales26,g.sales26t)],tc:[,,,g.ord26<g.ord26t?'bad':'pos',,,g.sales26<g.sales26t?'bad':'pos']})),
-       {cls:'sum',c:['합계',M(TT.ord26t),M(TT.ord26),R(TT.ord26,TT.ord26t),M(TT.sales26t),M(TT.sales26),R(TT.sales26,TT.sales26t)]}],{cls:'big',groups:[['',1],['수주',3],['매출',3]]})));
-   fin(p,'전사 2/4')}
-  // ── 전사 3 : 2027 계획
-  {const p=page('2027년 팀별 계획','매출 '+(M(TT.G)||'—')+cu+' · 손익 '+(M(GK)||'—')+cu+' · 이익률 '+R(GK,TT.G),A.length+'개 팀');
-   p.append(pan('팀별 2027 계획',u,null,
-     tbl([{l:'팀',w:90,a:'c'},{l:'PM',w:150,a:'c'},{l:'수주목표',a:'n'},{l:'매출(기성)',a:'n'},{l:'전년 대비',a:'n',w:120},{l:'손익',a:'n'},{l:'이익률',a:'n',w:110}],
-      [...A.map(([id,n,d,g])=>({c:[n,d.pm||'',M(g.target),M(g.G),D(g.G,g.sales26),M(g.G-g.K),R(g.G-g.K,g.G)],tc:[,,,,dc(g.G,g.sales26),g.G-g.K<0?'bad':'',g.G-g.K<0?'bad':'']})),
-       {cls:'sum',c:['합계','',M(TT.target),M(TT.G),D(TT.G,TT.sales26),M(GK),R(GK,TT.G)],tc:[,,,,dc(TT.G,TT.sales26),GK<0?'bad':'',GK<0?'bad':'']}],{cls:'big'})));
-   fin(p,'전사 3/4')}
-  // ── 전사 4 : 인력 · 리스크
-  {const p=page('인력 · 리스크','대기 소장 '+TT.wait+'명 · 미배치 '+TT.unassigned+'명 · 적자 예상 '+TT._neg+'곳',A.length+'개 팀');
-   p.append(pan('팀별 인력 · 리스크',null,null,tbl([{l:'팀',w:90,a:'c'},{l:'대기 소장',a:'n'},{l:'미배치',a:'n'},{l:'소장 미정 수주',a:'n'},{l:'적자 예상 현장',a:'n'},{l:'설변·정산 진행',a:'n'}],
-      [...A.map(([id,n,d,g])=>({c:[n,(g.wait||'')+(g.wait?'명':''),(g.unassigned||'')+(g.unassigned?'명':''),(g.orderNoPM||'')+(g.orderNoPM?'건':''),(g._neg||'')+(g._neg?'곳':''),(g.dc||'')+(g.dc?'건':'')],tc:[,,g.unassigned?'bad':'',g.orderNoPM?'bad':'',g._neg?'bad':'']})),
-       {cls:'sum',c:['합계',TT.wait+'명',TT.unassigned+'명',TT.orderNoPM+'건',TT._neg+'곳',TT.dc+'건']}],{cls:'big'})));
-   fin(p,'전사 4/4')}
+   fin(p,'전사 1/6')}
+  // ── 전사 2~6 : 지표별 한 장 (그 지표만)
+  const MP=[
+    ['수주','2026 목표 '+E(TT.ord26t)+'억 · 실적 '+E(TT.ord26)+'억 ('+R(TT.ord26,TT.ord26t)+') · 2027 목표 '+E(TT.target)+'억',
+      [{name:'2026 목표',k:'ord26t',color:'#DCD9D5'},{name:'2026 실적',k:'ord26',color:GR},{name:'2027 목표',k:'target',color:BL}]],
+    ['매출','2026 목표 '+E(TT.sales26t)+'억 · 예정 기성 '+E(TT.sales26)+'억 ('+R(TT.sales26,TT.sales26t)+') · 2027 계획 '+E(TT.G)+'억',
+      [{name:'2026 목표',k:'sales26t',color:'#DCD9D5'},{name:'2026 예정',k:'sales26',color:GR},{name:'2027 계획',k:'G',color:BL}]],
+    ['투입','2026 목표 '+E(TT.cost26t)+'억 · 예정 '+E(TT.cost26)+'억 · 2027 계획 '+E(TT.K)+'억',
+      [{name:'2026 목표',k:'cost26t',color:'#DCD9D5'},{name:'2026 예정',k:'cost26',color:GR},{name:'2027 계획',k:'K',color:BL}]],
+    ['손익','2026 '+E(TT.sales26-TT.cost26)+'억 · 2027 계획 '+E(GK)+'억 (이익률 '+R(GK,TT.G)+')',
+      [{name:'2026',f:g=>g.sales26-g.cost26,color:GR},{name:'2027 계획',f:g=>g.G-g.K,color:BL}]],
+    ['소장','2027.12까지 준공 현장 소장 '+TT.wait+'명 · 미배치 '+TT.unassigned+'명',
+      [{name:'대기',k:'wait',color:GR},{name:'미배치',k:'unassigned',color:'#E8695E'}],true]];
+  MP.forEach(([k,sub,ser,cnt],i)=>{const p=page(k,sub,A.length+'개 팀');
+    p.append(el('div',{class:'ckcs c4'},el('div',{class:'cwhole'},MK[k](TT,'전사')),...A.map(([id,n,d,g])=>MK[k](g,n))));
+    const s=ser.map(o=>({name:o.name,color:o.color,vals:A.map(x=>o.f?o.f(x[3]):x[3][o.k])}));
+    p.append(pan('팀별 '+k,cnt?'명':u,legend(s),barsV(names,s,{w:1040,h:230,labels:true,...(cnt?{fmt:v=>String(Math.round(v))}:{})})));
+    fin(p,'전사 '+(i+2)+'/6')});
   // ── 팀별 (본문 1장 + 부록)
   const apx=[];
   for(const [id,n,d,g] of A){
