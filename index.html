@@ -1419,14 +1419,14 @@ function renderReport(){
     done(p)});
   // ── 2. 2027 영업목표
   divider('2027년 영업목표');
-  {const p=slide('2. 2027년 영업목표');const PL=TT.G-TT.K;
+  {const p=slide('2. 2027년 영업목표');const PL=TT.G*0.03;
    p.append(el('div',{class:'bh-rings'},ring('수주액',NV,[['목표 : '+E(TT.target)+'억']]),ring('매출액',OR,[['목표 : '+E(TT.G)+'억']]),ring('손익',RD,[['목표 : '+E(PL)+'억',PL<0?'neg':'']])),
-     el('div',{class:'bh-cmp'},...[['수주액',TT.ord26,TT.target],['매출액',TT.sales26,TT.G],['손익',TT.sales26-TT.cost26,PL]].map(([l,a,b])=>el('div',null,'2026 실적 '+E(a)+'억 → 2027 목표 '+E(b)+'억'))));
+     el('div',{class:'bh-cmp'},...[['수주액',TT.ord26,TT.target],['매출액',TT.sales26,TT.G],['손익',TT.sales26-TT.cost26,PL]].map(([l,a,b])=>el('div',null,'2026 실적 '+E(a)+'억 → 2027 목표 '+E(b)+'억'+(l==='손익'?' (매출의 3%)':'')))));
    done(p)}
   // PM별
   for(const [id,n,d,g] of A){
     const pm=pmOf(d); const ttl='2. 2027년도 영업목표 _ '+n+(pm?' '+pm:'');
-    const PL=g.G-g.K, PL26=g.sales26-g.cost26;
+    const PL=g.G*0.03, PL26=g.sales26-g.cost26;
     const sites=sites_(d);
     {const p=slide(ttl);
       const left=el('div',{class:'l'},sub('26년 리뷰 및 27년 영업목표 _ '+n+(pm?' '+pm:'')),
@@ -1466,7 +1466,7 @@ function renderReport(){
    t.append(tb);p.append(t);done(p)}
   return out;
   function sites_(d){return [...salesRows(d)].filter(r=>!r.fixed)}
-  function barTrio(g){const v=[g.target,g.G,g.G-g.K],cols=[NV,N2,N3],lab=['수주','매출','이익'];const W=300,H=230,base=200,mx=Math.max(1,...v.map(x=>Math.abs(x)));
+  function barTrio(g){const v=[g.target,g.G,g.G*0.03],cols=[NV,N2,N3],lab=['수주','매출','이익'];const W=300,H=230,base=200,mx=Math.max(1,...v.map(x=>Math.abs(x)));
     const svg=sv('svg',{viewBox:'0 0 '+W+' '+H,width:W,height:H,class:'bh-bars'});
     v.forEach((x,i)=>{const bw=58,gx=20+i*(bw+40);const h=Math.max(2,Math.abs(x)/mx*(base-30));svg.append(sv('rect',{x:gx,y:x>=0?base-h:base,width:bw,height:x>=0?h:Math.min(h,28),fill:x<0?RD:cols[i]}));svg.append(sv('text',{x:gx+bw/2,y:x>=0?base-h-8:base-6,'text-anchor':'middle',class:'bv'},E(x)));svg.append(sv('text',{x:gx+bw/2,y:H-6,'text-anchor':'middle',class:'bl2'},lab[i]))});
     svg.append(sv('line',{x1:0,x2:W,y1:base,y2:base,stroke:'#BFBFBF'}));
