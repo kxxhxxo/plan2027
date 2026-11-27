@@ -1400,7 +1400,7 @@ function renderReport(){
   const S=[
     ['수주액',NV,g=>[g.ord26t,g.ord26],'* 설계변경 포함'],
     ['매출액',OR,g=>[g.sales26t,g.sales26],'* 26.10 확정 + 11~12월 예정'],
-    ['손익',RD,g=>[g.sales26t-g.cost26t,g.sales26-g.cost26],'* 손익 = 기성 − 투입 (26.10 확정 + 11~12월 예정)']];
+    ['손익',RD,g=>[g.cost26t?g.sales26t-g.cost26t:0,g.sales26-g.cost26],'* 손익 = 기성 − 투입 (26.10 확정 + 11~12월 예정)']];
   S.forEach(([lbl,col,f,foot],i)=>{const p=slide('1. 2026년 목표달성 현황 _ '+lbl);
     const [tg,ta]=f(TT);
     const rows=A.map(([id,n,d,g])=>{const [gg,aa]=f(g);return {n,pm:pmOf(d),goal:gg?E(gg)+' 억원':'-',act:E1(aa)+' 억원',pc:gg>0?P(aa,gg):'-',hit:gg>0&&aa>=gg,bad:aa<0}});
