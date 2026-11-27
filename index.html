@@ -355,6 +355,27 @@ td.link:hover{background:var(--accent-soft)}
 .cstyle .cfoot{margin-top:auto;display:flex;justify-content:space-between;font-size:10.5px;color:var(--c-mute);padding-top:6px;border-top:1px solid var(--c-ln2)}
 @media print{ body.reporting .rp.land.cstyle{padding:7mm 9mm 6mm;gap:8px;min-height:209mm} .cstyle .ckc,.cstyle .cpan{box-shadow:none} }
 
+
+/* 경영현황 C 지표 카드 (yc kc) 그대로 */
+.cstyle .ckcs.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cstyle .ckc.c5{background:#FBFAF9;border:1px solid #E2E8F0;border-radius:10px;padding:14px 18px 14px}
+.cstyle .ckc.c5 .kt{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid #DCD9D5;margin-bottom:10px}
+.cstyle .ckc.c5 .kt .h{font-size:14px;font-weight:800;color:#14110E}
+.cstyle .ckc.c5 .kt .kr{font-style:normal;font-size:12px;color:#433A33;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cstyle .ckc.c5 .kt .kr.neg{color:#DC2626}
+.cstyle .ckc.c5 .kt .kp{margin-left:auto;font-size:13px;font-weight:700}
+.cstyle .ckc.c5 .kv{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cstyle .ckc.c5 .kv em{display:block;font-style:normal;font-size:11px;font-weight:700;color:#80756B;margin-bottom:2px}
+.cstyle .ckc.c5 .kv b{font-size:24px;font-weight:700;letter-spacing:-.4px;color:#14110E;white-space:nowrap}
+.cstyle .ckc.c5 .kv b.neg{color:#DC2626}
+.cstyle .ckc.c5 .kv b small{font-size:12px;font-weight:500;color:#433A33;margin-left:2px}
+.cstyle .ckc.c5 .kbr{display:flex;align-items:center;gap:10px;margin-top:8px;text-align:left}
+.cstyle .ckc.c5 .kb{flex:1;height:8px;border-radius:4px;background:#F1F0ED;margin:0;overflow:hidden}
+.cstyle .ckc.c5 .kb s{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#A9BFDF,#2F5597)}
+.cstyle .ckc.c5 .kb.bad s{background:linear-gradient(90deg,#F0A89C,#D9483B)}
+.cstyle .ckc.c5 .ky{font-style:normal;font-size:12px;color:#433A33;white-space:nowrap}
+.cstyle .ckc.c5 .ky b{font-weight:700}
+.cstyle .ckc.c5 .ky b.pos{color:#2F5597} .cstyle .ckc.c5 .ky b.neg{color:#DC2626}
 /* 보고서 v2 — 여백·글자 키움 */
 .cstyle .rt.big{font-size:15px}
 .cstyle .rt.big th,.cstyle .rt.big td{height:46px;padding:0 22px}
@@ -1122,7 +1143,7 @@ const aggTeam=d=>{const su=orders(d).filter(isFull); const w=ownWait(d); const P
     const rs=salesRows(d); const C=rs.reduce((a,r)=>a+num(r.계약),0),PV=rs.reduce((a,r)=>a+num(r.전회),0),G=rs.reduce((a,r)=>a+gTot(r,2027),0),K=rs.reduce((a,r)=>a+cost(r,2027),0);
     return {sites:sites(d).length,noPM:sites(d).filter(r=>!r.소장).length,wait:w.length,unassigned:w.filter(x=>!pickedBy(d,'예비소장',x.label)).length,
       cnt:su.length,target:su.filter(r=>normProb(r.가능성)==='목표').reduce((a,r)=>a+num(r.목표수주액),0),tcnt:su.filter(r=>normProb(r.가능성)==='목표').length,orderNoPM:su.filter(r=>!r.예비소장).length,
-      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:[...rs,...doneSites(d)].reduce((a,r)=>a+gTot(r,2026),0),cost26:[...rs,...doneSites(d)].reduce((a,r)=>a+cost(r,2026),0),sales26run:rs.reduce((a,r)=>a+gTot(r,2026),0),sales26done:doneSites(d).reduce((a,r)=>a+gTot(r,2026),0),sales26t:num(P.매출목표),C,PV,G,K,risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
+      ord26:num(P.수주실적당초)+num(P.수주실적변경),ord26a:num(P.수주실적당초),ord26b:num(P.수주실적변경),ord26t:num(P.수주목표),sales26:[...rs,...doneSites(d)].reduce((a,r)=>a+gTot(r,2026),0),cost26:[...rs,...doneSites(d)].reduce((a,r)=>a+cost(r,2026),0),sales26run:rs.reduce((a,r)=>a+gTot(r,2026),0),sales26done:doneSites(d).reduce((a,r)=>a+gTot(r,2026),0),sales26t:num(P.매출목표),cost26t:num(P.투입목표),C,PV,G,K,risk:(d.거래처||[]).filter(r=>r.신용==='주의'||r.신용==='위험'),issues:sites(d).filter(r=>r.이슈).length,dc:sites(d).filter(r=>r.설변&&r.설변.계약현황&&!['당초','정산완료'].includes(r.설변.계약현황)).length,dcAmt:sites(d).reduce((a,r)=>a+num((r.설변||{}).예정금액),0),gapNeg:sites(d).filter(r=>r.계약&&num(r.계약)-num(r.실행)<0).length}};
 function renderAll(){
   const list=teamList(); const agg=aggTeam;
   const A=list.map(([id,n,d])=>[id,n,d,agg(d)]);
@@ -1289,14 +1310,22 @@ function renderReport(){
     el('div',{class:'ksub'},...(o.sub||[]).map(([t,c])=>el('span',{class:c||''},t))),
     o.bar==null?null:el('div',{class:'kb'},el('s',{class:o.good?'pos':'neg',style:'width:'+Math.max(0,Math.min(100,o.bar*100)).toFixed(1)+'%'})),
     o.foot?el('div',{class:'kbr'},o.foot):null);
-  const cards=g=>{const PL=g.G-g.K, PL26=g.sales26-g.cost26; const oR=g.ord26t?g.ord26/g.ord26t:null, sR=g.sales26t?g.sales26/g.sales26t:null;
-    return el('div',{class:'ckcs'},
-      card({t:'2027 수주',badge:oR!=null?'26년 달성 '+R(g.ord26,g.ord26t):'',good:oR!=null&&oR>=.9,big:M(g.target),unit:cu,sub:[['2026 실적 '+(M(g.ord26)||'—')+cu+' 대비 '],[D(g.target,g.ord26),dc(g.target,g.ord26)]],bar:oR,foot:'2026 목표 '+(M(g.ord26t)||'—')+cu}),
-      card({t:'2027 매출',badge:sR!=null?'26년 달성 '+R(g.sales26,g.sales26t):'',good:sR!=null&&sR>=.9,big:M(g.G),unit:cu,sub:[['2026 기성 '+(M(g.sales26)||'—')+cu+' 대비 '],[D(g.G,g.sales26),dc(g.G,g.sales26)]],bar:sR,foot:'2026 목표 '+(M(g.sales26t)||'—')+cu}),
-      card({t:'2027 손익',badge:g.G?'이익률 '+R(PL,g.G):'',good:PL>=0,bad:PL<0,big:M(PL)||(g.G?'0':''),unit:cu,sub:[['2026 손익 '],[(M(PL26)||'—')+cu,PL26<0?'neg':''],[' · 이익률 '+R(PL26,g.sales26)]],foot:'2027 투입 '+(M(g.K)||'—')+cu}),
-      card({t:'대기 소장',badge:g.unassigned?'미배치 '+g.unassigned+'명':'배치 완료',good:!g.unassigned,big:String(g.wait),unit:'명',sub:[['소장 미정 수주현장 '],[g.orderNoPM+'건',g.orderNoPM?'neg':'']],foot:'진행 현장 '+g.sites+'개 · 적자 예상 '+g._neg+'개'}))};
+  // 경영현황 C 지표 카드 그대로: 제목 · % / 목표 · 달성 / 막대 / 오른쪽 아래 한 줄
+  const E=v=>Math.round(num(v)/1e8).toLocaleString('ko-KR');
+  const cC=o=>{const r=o.goal?o.act/o.goal:null;const pc=o.pc!==undefined?o.pc:(r==null?'—':Math.round(r*100)+'%');const good=o.good!==undefined?o.good:(r!=null&&r>=1);
+    return el('div',{class:'ckc c5'},
+     el('div',{class:'kt'},el('span',{class:'h'},o.t),o.side?el('em',{class:'kr'+(o.sideBad?' neg':'')},o.side):null,el('b',{class:'kp '+(good?'pos':'neg')},pc)),
+     el('div',{class:'kv'},el('div',null,el('em',null,o.l1||'목표'),el('b',null,o.v1,el('small',null,o.u||'억'))),el('div',null,el('em',null,o.l2||'달성'),el('b',{class:o.bad2?'neg':''},o.v2,el('small',null,o.u||'억')))),
+     el('div',{class:'kbr'},el('div',{class:'kb'+(good?'':' bad')},el('s',{style:'width:'+(r==null?0:Math.max(0,Math.min(100,r*100))).toFixed(1)+'%'})),el('em',{class:'ky'},o.fl+' ',el('b',{class:o.fBad?'neg':'pos'},o.fv))))};
+  const cards=g=>{const PL=g.G-g.K, PL26=g.sales26-g.cost26, PLt=g.sales26t-g.cost26t;
+    return el('div',{class:'ckcs c5'},
+      cC({t:'수주',side:'2026',goal:g.ord26t,act:g.ord26,v1:E(g.ord26t),v2:E(g.ord26),fl:'2027 목표',fv:E(g.target)+'억',fBad:false}),
+      cC({t:'매출',side:'2026',goal:g.sales26t,act:g.sales26,v1:E(g.sales26t),v2:E(g.sales26),fl:'2027 계획',fv:E(g.G)+'억',fBad:g.G<g.sales26}),
+      cC({t:'투입',side:'2026',goal:g.cost26t,act:g.cost26,v1:g.cost26t?E(g.cost26t):'—',v2:E(g.cost26),good:!(g.cost26t&&g.sales26t)||(g.cost26/g.cost26t)<=(g.sales26/g.sales26t),fl:'2027 계획',fv:E(g.K)+'억',fBad:false}),
+      cC({t:'손익',side:'2026',goal:PLt,act:PL26,v1:g.cost26t?E(PLt):'—',v2:E(PL26),bad2:PL26<0,pc:PLt>0?Math.round(PL26/PLt*100)+'%':'—',good:g.cost26t?PL26>=PLt:PL26>=0,fl:'2027 계획',fv:E(PL)+'억',fBad:PL<0}),
+      cC({t:'소장',side:'2027.12까지 준공',goal:g.wait,act:g.wait-g.unassigned,u:'명',l1:'대기',l2:'배치',v1:String(g.wait),v2:String(g.wait-g.unassigned),pc:g.wait?Math.round((g.wait-g.unassigned)/g.wait*100)+'%':'—',good:!g.unassigned,fl:'미배치',fv:g.unassigned+'명',fBad:g.unassigned>0}))};
   for(const x of A)x[3]._neg=salesRows(x[2]).filter(r=>gTot(r,2027)-cost(r,2027)<0).length;
-  const TT={};for(const k of ['ord26','ord26t','ord26a','ord26b','target','sales26','sales26t','sales26run','sales26done','cost26','G','K','C','wait','unassigned','orderNoPM','sites','dc','dcAmt','issues','_neg','tcnt','cnt'])TT[k]=A.reduce((a,x)=>a+(num(x[3][k])||0),0);
+  const TT={};for(const k of ['cost26t','ord26','ord26t','ord26a','ord26b','target','sales26','sales26t','sales26run','sales26done','cost26','G','K','C','wait','unassigned','orderNoPM','sites','dc','dcAmt','issues','_neg','tcnt','cnt'])TT[k]=A.reduce((a,x)=>a+(num(x[3][k])||0),0);
   const GK=TT.G-TT.K;
   out.push(el('div',{class:'rbar wide noprint'},el('span',null,A.length+'팀 · A4 가로 · 단위: '+u),el('label',{class:'apxck'},(()=>{const c=el('input',{type:'checkbox',onchange:e=>{rpAppendix=e.target.checked;render()}});c.checked=rpAppendix;return c})(),' 부록 (현장 목록)'),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
   const names=A.map(x=>x[1]);
