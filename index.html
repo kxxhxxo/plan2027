@@ -296,21 +296,24 @@ td.link:hover{background:var(--accent-soft)}
 
 /* ── 대표 보고서 · 예전 사업계획서 양식 */
 .rp.land.bh{font-family:"SUIT R","SUIT Variable","Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;color:#000;padding:8mm 10mm 6mm;display:flex;flex-direction:column;gap:0;font-size:13px;letter-spacing:-.2px;position:relative}
-.bh .bh-h{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #7F7F7F;padding-bottom:6px;margin-bottom:16px}
+.bh .bh-h{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #7F7F7F;padding-bottom:6px;margin-bottom:10px}
 .bh .bh-h h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.5px}
 .bh .bh-h img{height:36px}
-.bh .bh-f{margin-top:auto;border-top:1px solid #7F7F7F;padding-top:4px;display:flex;justify-content:flex-end;font-size:10px;color:#7F7F7F}
+.bh .bh-f{margin-top:10px;border-top:1px solid #7F7F7F;padding-top:4px;display:flex;justify-content:flex-end;font-size:10px;color:#7F7F7F}
 .bh.cover{justify-content:center;overflow:hidden}
 .bh.cover .cv-logo{position:absolute;left:12mm;top:10mm;height:46px}
 .bh.cover .cv-tri{position:absolute;right:0;top:0;width:0;height:0;border-top:210mm solid #E7E6E6;border-left:120mm solid transparent}
 .bh.cover h1{font-size:34px;font-weight:700;margin:0 0 0 6mm;letter-spacing:-1px;position:relative}
 .bh.cover .cv-d{position:absolute;left:16mm;bottom:22mm;font-size:16px}
-.bh .bh-toc{list-style:none;margin:20px 0 0 30px;padding:0;display:flex;flex-direction:column;gap:26px}
+.bh .bh-toc{list-style:none;margin:0 auto;width:auto!important;padding:0;display:flex;flex-direction:column;gap:26px}
 .bh .bh-toc li{display:flex;flex-direction:column;gap:8px}
 .bh .bh-toc b{font-size:18px}
 .bh .bh-toc span{font-size:15px;margin-left:24px;color:#404040}
 .bh.div .dv{flex:1;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700}
-.bh .bh-split{display:flex;gap:24px;align-items:flex-start;flex:1}
+.bh .bh-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;width:100%}
+.bh .bh-body>*{width:100%}
+.bh .bh-split{display:flex;gap:28px;align-items:center;justify-content:center}
+.bh .bh-split.pm{align-items:flex-start}
 .bh .bh-split>.l{flex:0 0 300px;display:flex;flex-direction:column;align-items:center}
 .bh .bh-split>.r{flex:1;min-width:0}
 .bh .bh-split.pm>.l{flex:0 0 330px;align-items:stretch}
@@ -325,7 +328,7 @@ td.link:hover{background:var(--accent-soft)}
 .bh .bh-ring .ln:first-child{color:#000}
 .bh .bh-ring .ln.neg{color:#E60013}
 .bh .bh-ring .sep{width:90px;border-top:1px dashed #7F7F7F}
-.bh .bh-rings{display:flex;justify-content:space-around;margin-top:30px}
+.bh .bh-rings{display:flex;justify-content:space-around}
 .bh .bh-cmp{display:flex;justify-content:space-around;margin-top:22px;font-size:14px;color:#404040}
 .bh table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed}
 .bh .bh-t{border-collapse:separate;border-spacing:0 9px;margin-top:-9px}
@@ -1371,7 +1374,7 @@ function renderReport(){
   out.push(el('div',{class:'rbar wide noprint'},el('span',null,'A4 가로 · 예전 사업계획서 양식'),el('button',{class:'btn primary',onclick:()=>window.print()},'인쇄 / PDF 저장')));
   let pg=0;
   const slide=(title)=>{const p=el('div',{class:'rp land bh'});p.append(el('div',{class:'bh-h'},el('h1',null,title),el('img',{src:'img/logo.png',alt:''})));return p};
-  const done=(p)=>{pg++;p.append(el('div',{class:'bh-f'},el('span',null,String(pg))));out.push(p)};
+  const done=(p)=>{pg++;const kids=[...p.children].slice(1);if(kids.length&&!p.classList.contains('div'))p.append(el('div',{class:'bh-body'},...kids));p.append(el('div',{class:'bh-f'},el('span',null,String(pg))));out.push(p)};
   const sub=t=>el('div',{class:'bh-sub'},el('i'),t);
   const ring=(label,color,lines)=>{const S=260,R=110,W=26;const svg=sv('svg',{viewBox:'0 0 '+S+' '+S,width:S,height:S});svg.append(sv('circle',{cx:S/2,cy:S/2,r:R,fill:'none',stroke:color,'stroke-width':W}));
     return el('div',{class:'bh-ring'},el('div',{class:'rl'},label),el('div',{class:'rd'}),el('div',{class:'rc'},svg,el('div',{class:'rt'},...lines.map(([t,c],i)=>[i?el('div',{class:'sep'}):null,el('div',{class:'ln'+(c?' '+c:'')},t)]).flat().filter(Boolean))))};
@@ -1422,7 +1425,7 @@ function renderReport(){
         (()=>{const t=el('table',{class:'bh-goal'});t.append(el('thead',null,el('tr',null,el('th',null,'구분'),el('th',null,'26년 실적'),el('th',null,'27년 목표'))));const tb=el('tbody');
           [['수주',g.ord26,g.target,NV],['매출',g.sales26,g.G,N2],['이익',PL26,PL,N3]].forEach(([l,a,b,c])=>tb.append(el('tr',{style:'background:'+c},el('td',null,l),el('td',null,E(a)+' 억원'),el('td',null,E(b)+' 억원'))));t.append(tb);return t})());
       const t=el('table',{class:'bh-list'});t.append(el('thead',null,el('tr',null,el('th',{style:'width:44px'},'No.'),el('th',{style:'width:130px'},'건설사'),el('th',null,'현장명'),el('th',{style:'width:96px'},'27년 기성'))));
-      const tb=el('tbody');for(let i=0;i<21;i++){const r=part[i];tb.append(el('tr',null,el('td',null,String(ci*21+i+1)),el('td',null,r?r.건설사||'':''),el('td',{class:'nm'},r?r.현장명:''),el('td',{class:'n'},r&&gTot(r,2027)?E1(gTot(r,2027)):'')))}
+      const tb=el('tbody');for(let i=0;i<(ci?part.length:21);i++){const r=part[i];tb.append(el('tr',null,el('td',null,String(ci*21+i+1)),el('td',null,r?r.건설사||'':''),el('td',{class:'nm'},r?r.현장명:''),el('td',{class:'n'},r&&gTot(r,2027)?E1(gTot(r,2027)):'')))}
       t.append(tb);
       p.append(el('div',{class:'bh-split pm'},ci===0?left:el('div',{class:'l'},sub('진행 현장 (계속)')),el('div',{class:'r'},t)));done(p)});
     // 수주 목표 현장
