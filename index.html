@@ -609,6 +609,14 @@ const waitPM=d=>{
   ...(d.소장영입||[]).filter(r=>r.이름).map(r=>({m:r.영입시기||'',label:recruitLabel(r),ym:ym(r.영입시기),recruit:true}))].sort((a,b)=>a.ym-b.ym||a.label.localeCompare(b.label))};
 // admin이 열면 명단의 팀·현장·준공을 실제 현장 구성으로 동기화
 function syncRoster(){if(ROLE!=='admin'||!docs.hq)return;let ch=false;for(const r of roster()){const at=rosterSite(r);const v=at?[at.team,at.site,at.준공]:[r.팀||'','',''];if(r.팀!==v[0]||r.현장!==v[1]||(r.준공||'')!==v[2]){r.팀=v[0];r.현장=v[1];r.준공=v[2];ch=true}}if(ch)save('hq')}
+
+// 현장명이 '건설사_현장명' 꼴인 행: 건설사를 떼어 해당 건설사로 옮김
+const splitKey=v=>koKey(v||'').replace(/\(주\)|㈜|주식회사|\s/g,'');
+const splitCands=d=>orders(d).filter(r=>/_/.test(r.현장명||''));
+function splitOrders(d){const cl=clients(d);let n=0;
+  for(const r of splitCands(d)){const i=r.현장명.indexOf('_');const pre=r.현장명.slice(0,i).trim(), rest=r.현장명.slice(i+1).trim();if(!pre||!rest)continue;
+    const hit=cl.find(c=>splitKey(c)===splitKey(pre));r.건설사=hit||pre;r.현장명=rest;n++}
+  return n}
 const clients=d=>[...new Set((d.거래처||[]).map(r=>r.건설사).filter(Boolean))].sort(bcmp(d));
 
 // ---- render
@@ -828,7 +836,8 @@ function renderOrders(d){
   {const sr=el('tr',{class:'sum'},el('td',{class:'ro c',colspan:2},'합계'));for(const c of cols.slice(1)){if(c.k==='목표수주액'){const t=moneyCell(tg(rows));t.title='구분이 목표인 건의 합계';sr.append(t)}else sr.append(el('td'))}sr.append(el('td'));body.append(sr)}
   tb.append(body); right.append(el('div',{class:'nowrap'},tb));
   const pb=el('button',{class:'btn',onclick:()=>{printView='orders';render()}},'인쇄 / PDF');
-  if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가'),el('span',{style:'flex:1'}),pb,el('button',{class:'btn',onclick:()=>xlsxTemplate(d)},'엑셀 양식 받기'),el('button',{class:'btn',onclick:()=>xlsxUpload(d)},'엑셀 올리기')));
+  const sc=splitCands(d).length; const sb=(!readonly&&sc)?el('button',{class:'btn',onclick:()=>{if(!confirm('현장명 앞의 건설사로 '+sc+'건을 옮깁니다.'))return;splitOrders(d);save(team);render()}},'건설사 분리 ('+sc+'건)'):null;
+  if(!readonly)right.append(el('div',{class:'foot'},el('button',{class:'btn',onclick:()=>{all.push(blank());save(team);render()}},'+ 행 추가'),el('span',{style:'flex:1'}),sb,pb,el('button',{class:'btn',onclick:()=>xlsxTemplate(d)},'엑셀 양식 받기'),el('button',{class:'btn',onclick:()=>xlsxUpload(d)},'엑셀 올리기')));
   else right.append(el('div',{class:'foot'},el('span',{style:'flex:1'}),pb));
   const lc=el('div',{class:'sheet'},left), rc=el('div',{class:'sheet'},right);
   box.append(el('div',{class:'split'},lc,rc));
