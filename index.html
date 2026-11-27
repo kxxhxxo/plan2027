@@ -365,6 +365,8 @@ td.link:hover{background:var(--accent-soft)}
 .bh .bh-split>.r.two{display:flex;gap:10px;align-items:flex-start}
 .bh .bh-split>.r.two>table{flex:1 1 0;width:0;min-width:0}
 .bh .bh-list td{height:var(--rh,20.5px)}
+.bh .bh-list.tight td{font-size:10.5px}
+.bh .bh-list.tight th{height:20px}
 .bh .bh-list tr.nw td{background:#FFF7F2;font-weight:700}
 .bh .bh-split>.r.two .bh-list td{font-size:10.5px;padding:0 4px}
 
@@ -1432,9 +1434,9 @@ function renderReport(){
         (()=>{const t=el('table',{class:'bh-goal'});t.append(el('thead',null,el('tr',null,el('th',null,'구분'),el('th',null,'26년 실적'),el('th',null,'27년 목표'))));const tb=el('tbody');
           [['수주',g.ord26,g.target,NV],['매출',g.sales26,g.G,N2],['이익',PL26,PL,N3]].forEach(([l,a,b,c])=>tb.append(el('tr',{style:'background:'+c},el('td',null,l),el('td',null,E(a)+' 억원'),el('td',null,E(b)+' 억원'))));t.append(tb);return t})());
       // 진행 현장 + 신규 수주 현장(0행) + 합계 = 27년 매출 목표 — 한 장에 모두 (많으면 두 줄로 나눠 나란히)
-      const nr=newRow(d); const all=sites; const two=all.length+2>24;
-      const per=two?Math.ceil((all.length+2)/2):all.length+2; const rh=Math.max(14,Math.min(22,Math.floor(520/(per+1))));
-      const mk=(items,withNew,withTot,startNo)=>{const t=el('table',{class:'bh-list',style:'--rh:'+rh+'px'});t.append(el('thead',null,el('tr',null,el('th',{style:'width:36px'},'No.'),el('th',{style:'width:'+(two?84:120)+'px'},'건설사'),el('th',null,'현장명'),el('th',{style:'width:'+(two?60:84)+'px'},'27년 기성'))));
+      const nr=newRow(d); const all=sites; const two=false;
+      const per=two?Math.ceil((all.length+2)/2):all.length+2; const rh=Math.max(13,Math.min(22,Math.floor(610/(per+1))));
+      const mk=(items,withNew,withTot,startNo)=>{const t=el('table',{class:'bh-list'+(rh<18?' tight':''),style:'--rh:'+rh+'px'});t.append(el('thead',null,el('tr',null,el('th',{style:'width:36px'},'No.'),el('th',{style:'width:'+(two?84:120)+'px'},'건설사'),el('th',null,'현장명'),el('th',{style:'width:'+(two?60:84)+'px'},'27년 기성'))));
         const tb=el('tbody');
         if(withNew)tb.append(el('tr',{class:'nw'},el('td',null,'0'),el('td',null,''),el('td',{class:'nm'},'신규 수주 현장'),el('td',{class:'n'},gTot(nr,2027)?E1(gTot(nr,2027)):'')));
         items.forEach((r,i)=>tb.append(el('tr',null,el('td',null,String(startNo+i)),el('td',null,r.건설사||''),el('td',{class:'nm'},r.현장명||''),el('td',{class:'n'},gTot(r,2027)?E1(gTot(r,2027)):''))));
