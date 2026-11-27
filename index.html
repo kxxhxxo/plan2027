@@ -362,6 +362,12 @@ td.link:hover{background:var(--accent-soft)}
 .bh .bh-list tr.dim td{color:#7F7F7F}
 .bh .bh-list tr.tot td{font-weight:700;border-top:1px solid #000;background:#F2F2F2}
 .bh .bh-list.wide td{height:27px;font-size:12.5px}
+.bh .bh-split>.r.two{display:flex;gap:10px;align-items:flex-start}
+.bh .bh-split>.r.two>table{flex:1 1 0;width:0;min-width:0}
+.bh .bh-list td{height:var(--rh,20.5px)}
+.bh .bh-list tr.nw td{background:#FFF7F2;font-weight:700}
+.bh .bh-split>.r.two .bh-list td{font-size:10.5px;padding:0 4px}
+
 @media print{ body.reporting .rp.land.bh{padding:8mm 10mm 6mm;min-height:209mm} }
 /* ── 대표 보고서 · 경영현황 C 규격 (A4 가로) */
 @font-face{font-family:"SUIT R";font-weight:400;src:url(fonts/suit-400.woff2) format("woff2");font-display:swap}
@@ -1420,16 +1426,24 @@ function renderReport(){
     const pm=pmOf(d); const ttl='2. 2027년도 영업목표 _ '+n+(pm?' '+pm:'');
     const PL=g.G-g.K, PL26=g.sales26-g.cost26;
     const sites=sites_(d);
-    const chunks=[];for(let i=0;i<Math.max(1,sites.length);i+=21)chunks.push(sites.slice(i,i+21));
-    chunks.forEach((part,ci)=>{const p=slide(ttl+(ci?' (계속)':''));
+    {const p=slide(ttl);
       const left=el('div',{class:'l'},sub('26년 리뷰 및 27년 영업목표 _ '+n+(pm?' '+pm:'')),
         barTrio(g),
         (()=>{const t=el('table',{class:'bh-goal'});t.append(el('thead',null,el('tr',null,el('th',null,'구분'),el('th',null,'26년 실적'),el('th',null,'27년 목표'))));const tb=el('tbody');
           [['수주',g.ord26,g.target,NV],['매출',g.sales26,g.G,N2],['이익',PL26,PL,N3]].forEach(([l,a,b,c])=>tb.append(el('tr',{style:'background:'+c},el('td',null,l),el('td',null,E(a)+' 억원'),el('td',null,E(b)+' 억원'))));t.append(tb);return t})());
-      const t=el('table',{class:'bh-list'});t.append(el('thead',null,el('tr',null,el('th',{style:'width:44px'},'No.'),el('th',{style:'width:130px'},'건설사'),el('th',null,'현장명'),el('th',{style:'width:96px'},'27년 기성'))));
-      const tb=el('tbody');for(let i=0;i<(ci?part.length:21);i++){const r=part[i];tb.append(el('tr',null,el('td',null,String(ci*21+i+1)),el('td',null,r?r.건설사||'':''),el('td',{class:'nm'},r?r.현장명:''),el('td',{class:'n'},r&&gTot(r,2027)?E1(gTot(r,2027)):'')))}
-      t.append(tb);
-      p.append(el('div',{class:'bh-split pm'},ci===0?left:el('div',{class:'l'},sub('진행 현장 (계속)')),el('div',{class:'r'},t)));done(p)});
+      // 진행 현장 + 신규 수주 현장(0행) + 합계 = 27년 매출 목표 — 한 장에 모두 (많으면 두 줄로 나눠 나란히)
+      const nr=newRow(d); const all=sites; const two=all.length+2>24;
+      const per=two?Math.ceil((all.length+2)/2):all.length+2; const rh=Math.max(14,Math.min(22,Math.floor(520/(per+1))));
+      const mk=(items,withNew,withTot,startNo)=>{const t=el('table',{class:'bh-list',style:'--rh:'+rh+'px'});t.append(el('thead',null,el('tr',null,el('th',{style:'width:36px'},'No.'),el('th',{style:'width:'+(two?84:120)+'px'},'건설사'),el('th',null,'현장명'),el('th',{style:'width:'+(two?60:84)+'px'},'27년 기성'))));
+        const tb=el('tbody');
+        if(withNew)tb.append(el('tr',{class:'nw'},el('td',null,'0'),el('td',null,''),el('td',{class:'nm'},'신규 수주 현장'),el('td',{class:'n'},gTot(nr,2027)?E1(gTot(nr,2027)):'')));
+        items.forEach((r,i)=>tb.append(el('tr',null,el('td',null,String(startNo+i)),el('td',null,r.건설사||''),el('td',{class:'nm'},r.현장명||''),el('td',{class:'n'},gTot(r,2027)?E1(gTot(r,2027)):''))));
+        if(withTot)tb.append(el('tr',{class:'tot'},el('td',{colspan:3},'합계 (27년 매출 목표)'),el('td',{class:'n'},E1(g.G))));
+        t.append(tb);return t};
+      let right;
+      if(!two)right=el('div',{class:'r'},mk(all,true,true,1));
+      else{const k=per-1;right=el('div',{class:'r two'},mk(all.slice(0,k),true,false,1),mk(all.slice(k),false,true,k+1))}
+      p.append(el('div',{class:'bh-split pm'},left,right));done(p)}
     // 수주 목표 현장
     const su=orders(d).filter(isFull).sort((x,y)=>(normProb(x.가능성)==='목표'?0:1)-(normProb(y.가능성)==='목표'?0:1)||ko(x.건설사,y.건설사)||ym(x.예정)-ym(y.예정));
     if(su.length){const ck=[];for(let i=0;i<su.length;i+=18)ck.push(su.slice(i,i+18));
